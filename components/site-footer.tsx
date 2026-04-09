@@ -14,17 +14,6 @@ export function SiteFooter() {
               <p>
                 <span className="font-semibold text-sky-100">College:</span> To be updated
               </p>
-              <p>
-                <span className="font-semibold text-sky-100">Instagram:</span>{" "}
-                <a
-                  href="https://www.instagram.com/adwaith_bnair?igsh=MWkzc2FueWsyYTV2cA=="
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-sky-200 underline-offset-4 hover:text-sky-100"
-                >
-                  @adwaith_bnair
-                </a>
-              </p>
             </div>
           </div>
 
@@ -33,17 +22,6 @@ export function SiteFooter() {
             <div className="mt-4 space-y-3 text-sm">
               <p>
                 <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
-              </p>
-              <p>
-                <span className="font-semibold text-sky-100">Instagram:</span>{" "}
-                <a
-                  href="https://www.instagram.com/kamalashewar?igsh=MTFtcXo1c3ZvODRsZg=="
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline decoration-sky-200 underline-offset-4 hover:text-sky-100"
-                >
-                  @kamalashewar
-                </a>
               </p>
             </div>
           </div>
