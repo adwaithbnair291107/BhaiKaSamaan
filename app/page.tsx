@@ -11,7 +11,6 @@ export default function HomePage() {
         <section className="mt-8 text-center">
           <h1 className="mt-4 font-display text-5xl text-ink sm:text-7xl">BhaiKaSamaan</h1>
           <p className="mt-4 text-sm tracking-[0.24em] text-moss">Junior Ke Kaam, Kam Hai Daam.</p>
-          <p className="mt-3 text-base text-ink/70">Bhai Ka Samaan</p>
         </section>
 
         <section className="mt-10 grid gap-8 rounded-[32px] bg-ink px-8 py-12 text-white shadow-card lg:grid-cols-[1.2fr_0.8fr]">
