@@ -3,8 +3,7 @@ export function SiteFooter() {
     <footer className="mt-16 bg-sky-700 text-white">
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div>
-          <p className="text-sm uppercase tracking-[0.24em] text-sky-100">Built By</p>
-          <h2 className="mt-2 font-display text-3xl">Meet the team behind BhaiKaSamaan</h2>
+          <h2 className="font-display text-3xl">Built By</h2>
           <p className="mt-3 text-sm text-sky-100">Reach out for feedback, collaboration, or campus expansion.</p>
         </div>
 
