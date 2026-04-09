@@ -15,15 +15,6 @@ export function SiteFooter() {
                 <span className="font-semibold text-sky-100">College:</span> To be updated
               </p>
               <p>
-                <span className="font-semibold text-sky-100">Email:</span>{" "}
-                <a
-                  href="mailto:adwaithbnair3621@gmail.com"
-                  className="underline decoration-sky-200 underline-offset-4 hover:text-sky-100"
-                >
-                  adwaithbnair3621@gmail.com
-                </a>
-              </p>
-              <p>
                 <span className="font-semibold text-sky-100">Instagram:</span>{" "}
                 <a
                   href="https://www.instagram.com/adwaith_bnair?igsh=MWkzc2FueWsyYTV2cA=="
@@ -42,15 +33,6 @@ export function SiteFooter() {
             <div className="mt-4 space-y-3 text-sm">
               <p>
                 <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
-              </p>
-              <p>
-                <span className="font-semibold text-sky-100">Email:</span>{" "}
-                <a
-                  href="mailto:jmkamalashewar389@gmail.com"
-                  className="underline decoration-sky-200 underline-offset-4 hover:text-sky-100"
-                >
-                  jmkamalashewar389@gmail.com
-                </a>
               </p>
               <p>
                 <span className="font-semibold text-sky-100">Instagram:</span>{" "}
