@@ -3,8 +3,8 @@ export type Listing = {
   title: string;
   collegeSlug: string;
   collegeName: string;
-  branch?: string;
-  year?: string;
+  branch?: string | null;
+  year?: string | null;
   category: string;
   condition: string;
   price: number;
@@ -23,10 +23,6 @@ export type College = {
   description: string;
 };
 
-export const colleges: College[] = [];
-
-export const listings: Listing[] = [];
-
 export const categories = [
   "College Books",
   "Exam Books (Competitive)",
@@ -37,15 +33,3 @@ export const categories = [
   "Electronics & Gadgets",
   "Lab & Project Items"
 ];
-
-export function getCollege(slug: string) {
-  return colleges.find((college) => college.slug === slug);
-}
-
-export function getListingsByCollege(slug: string) {
-  return listings.filter((listing) => listing.collegeSlug === slug);
-}
-
-export function getListing(id: string) {
-  return listings.find((listing) => listing.id === id);
-}

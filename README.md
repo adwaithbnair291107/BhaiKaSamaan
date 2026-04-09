@@ -1,13 +1,13 @@
 # BhaiKaSamaan MVP
 
-First local MVP for a college-based student resale marketplace.
+College-first student resale marketplace with Supabase-ready database wiring.
 
 ## Stack
 
 - Next.js
 - TypeScript
 - Tailwind CSS
-- Mock local data for testing
+- Supabase
 
 ## Pages included
 
@@ -21,19 +21,22 @@ First local MVP for a college-based student resale marketplace.
 1. Install Node.js LTS from the official Node.js website.
 2. Open a terminal in this project folder.
 3. Run `npm install`
-4. Run `npm run dev`
-5. Open `http://localhost:3000`
+4. Copy `.env.example` to `.env.local`
+5. Add your Supabase URL and anon key
+6. Run the SQL in `supabase/schema.sql` inside the Supabase SQL Editor
+7. Run `npm run dev`
+8. Open `http://localhost:3000`
 
 ## What this version does
 
 - Demonstrates the `one platform, many college mini marketplaces` idea
-- Uses sample colleges and listings
-- Lets you test the structure and UI before adding backend services
+- Reads colleges and listings from Supabase
+- Keeps empty-state UI if your database is still empty or env vars are missing
 
 ## Recommended next steps
 
-1. Add Supabase project and environment variables
-2. Replace mock data with database tables
-3. Add student login
-4. Add image upload
-5. Add real listing creation
+1. Seed your real colleges and first listings in Supabase
+2. Add student login
+3. Add image upload
+4. Add real listing creation
+5. Add seller contact flow

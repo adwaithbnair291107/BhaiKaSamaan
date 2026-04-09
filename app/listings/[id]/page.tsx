@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { getListing } from "@/lib/data";
+import { getListingById } from "@/lib/db";
 
 type PageProps = {
   params: {
@@ -10,8 +10,8 @@ type PageProps = {
   };
 };
 
-export default function ListingDetailPage({ params }: PageProps) {
-  const listing = getListing(params.id);
+export default async function ListingDetailPage({ params }: PageProps) {
+  const listing = await getListingById(params.id);
 
   if (!listing) {
     notFound();
@@ -23,7 +23,7 @@ export default function ListingDetailPage({ params }: PageProps) {
 
       <main className="mx-auto max-w-6xl px-6 py-10">
         <Link href={`/college/${listing.collegeSlug}`} className="text-sm font-semibold text-moss hover:text-ink">
-          ← Back to {listing.collegeName}
+          {`<- Back to ${listing.collegeName}`}
         </Link>
 
         <section className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">

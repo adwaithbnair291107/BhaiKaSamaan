@@ -1,7 +1,10 @@
 import { SiteHeader } from "@/components/site-header";
-import { categories, colleges } from "@/lib/data";
+import { categories } from "@/lib/data";
+import { getColleges } from "@/lib/db";
 
-export default function SellPage() {
+export default async function SellPage() {
+  const colleges = await getColleges();
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -20,9 +23,11 @@ export default function SellPage() {
               <label className="grid gap-2 text-sm font-medium text-ink">
                 College
                 <select className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none">
-                  {colleges.map((college) => (
-                    <option key={college.slug}>{college.name}</option>
-                  ))}
+                  {colleges.length > 0 ? (
+                    colleges.map((college) => <option key={college.slug}>{college.name}</option>)
+                  ) : (
+                    <option>Add colleges in Supabase first</option>
+                  )}
                 </select>
               </label>
 

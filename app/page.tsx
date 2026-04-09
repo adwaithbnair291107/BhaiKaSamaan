@@ -1,8 +1,13 @@
 import Link from "next/link";
+import { ListingCard } from "@/components/listing-card";
 import { SiteHeader } from "@/components/site-header";
-import { categories, colleges } from "@/lib/data";
+import { categories } from "@/lib/data";
+import { getColleges, getLatestListings } from "@/lib/db";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const colleges = await getColleges();
+  const latestListings = await getLatestListings();
+
   return (
     <div className="min-h-screen">
       <SiteHeader />
@@ -121,13 +126,21 @@ export default function HomePage() {
           <div className="flex items-end justify-between gap-6">
             <div>
               <p className="text-sm uppercase tracking-[0.26em] text-moss">What Comes Next</p>
-              <h2 className="mt-2 font-display text-4xl text-ink">This is ready for your real data</h2>
+              <h2 className="mt-2 font-display text-4xl text-ink">Live listings from your database</h2>
             </div>
           </div>
 
-          <div className="mt-6 rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70 shadow-card">
-            No sample listings are shown now. Once we connect real data, this section will fill with actual posts.
-          </div>
+          {latestListings.length > 0 ? (
+            <div className="mt-6 grid gap-5 lg:grid-cols-3">
+              {latestListings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70 shadow-card">
+              No database listings yet. Add your Supabase keys, run the schema, and this section will show real posts.
+            </div>
+          )}
         </section>
       </main>
     </div>

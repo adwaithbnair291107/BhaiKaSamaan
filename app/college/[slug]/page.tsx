@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ListingCard } from "@/components/listing-card";
 import { SiteHeader } from "@/components/site-header";
-import { categories, getCollege, getListingsByCollege } from "@/lib/data";
+import { categories } from "@/lib/data";
+import { getCollegeBySlug, getListingsByCollege } from "@/lib/db";
 
 type PageProps = {
   params: {
@@ -10,14 +11,14 @@ type PageProps = {
   };
 };
 
-export default function CollegePage({ params }: PageProps) {
-  const college = getCollege(params.slug);
+export default async function CollegePage({ params }: PageProps) {
+  const college = await getCollegeBySlug(params.slug);
 
   if (!college) {
     notFound();
   }
 
-  const collegeListings = getListingsByCollege(params.slug);
+  const collegeListings = await getListingsByCollege(params.slug);
 
   return (
     <div className="min-h-screen">
@@ -25,7 +26,7 @@ export default function CollegePage({ params }: PageProps) {
 
       <main className="mx-auto max-w-6xl px-6 py-10">
         <Link href="/" className="text-sm font-semibold text-moss hover:text-ink">
-          ← Back to all colleges
+          {"<- Back to all colleges"}
         </Link>
 
         <section className="mt-5 rounded-[32px] bg-white p-8 shadow-card">
@@ -61,7 +62,7 @@ export default function CollegePage({ params }: PageProps) {
             collegeListings.map((listing) => <ListingCard key={listing.id} listing={listing} />)
           ) : (
             <div className="rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70">
-              No listings yet for this college. This is where your campus ambassador flow can start.
+              No listings yet for this college. Add your first real listing in Supabase to bring this page to life.
             </div>
           )}
         </section>
