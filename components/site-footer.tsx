@@ -27,7 +27,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-3xl bg-white/10 p-6 text-sm backdrop-blur-sm">
+        <div className="mt-8 grid gap-4 rounded-3xl bg-white/10 p-6 text-sm backdrop-blur-sm md:grid-cols-2">
           <p>
             <span className="font-semibold text-sky-100">Email:</span>{" "}
             <a
@@ -37,7 +37,7 @@ export function SiteFooter() {
               bhaikasaaman@gmail.com
             </a>
           </p>
-          <p className="mt-3">
+          <p>
             <span className="font-semibold text-sky-100">Instagram:</span>{" "}
             <a
               href="https://www.instagram.com/bhaikasaaman?igsh=b2xzbnY3NzYxcXg5"
