@@ -4,6 +4,7 @@ export function SiteFooter() {
       <div className="mx-auto max-w-6xl px-6 py-10">
         <div>
           <h2 className="font-display text-4xl">Built By</h2>
+          <p className="mt-3 text-sm text-sky-100">Reach out for feedback, collaboration, or campus expansion.</p>
         </div>
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
