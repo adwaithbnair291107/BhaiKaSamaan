@@ -65,41 +65,53 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {colleges.map((college) => (
-              <Link
-                key={college.slug}
-                href={`/college/${college.slug}`}
-                className="rounded-[28px] border border-ink/10 bg-white p-6 shadow-card transition hover:-translate-y-1"
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-ink">{college.name}</h3>
-                    <p className="mt-1 text-sm text-ink/60">{college.city}</p>
+          {colleges.length > 0 ? (
+            <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {colleges.map((college) => (
+                <Link
+                  key={college.slug}
+                  href={`/college/${college.slug}`}
+                  className="rounded-[28px] border border-ink/10 bg-white p-6 shadow-card transition hover:-translate-y-1"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-semibold text-ink">{college.name}</h3>
+                      <p className="mt-1 text-sm text-ink/60">{college.city}</p>
+                    </div>
+                    <span className="rounded-full bg-gold/25 px-3 py-2 text-sm font-semibold text-ink">
+                      {college.activeListings} live
+                    </span>
                   </div>
-                  <span className="rounded-full bg-gold/25 px-3 py-2 text-sm font-semibold text-ink">
-                    {college.activeListings} live
-                  </span>
-                </div>
-                <p className="mt-5 text-sm leading-6 text-ink/72">{college.description}</p>
-              </Link>
-            ))}
-          </div>
+                  <p className="mt-5 text-sm leading-6 text-ink/72">{college.description}</p>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70 shadow-card">
+              No colleges added yet. We can add your real college list next instead of using demo data.
+            </div>
+          )}
         </section>
 
         <section className="mt-16">
           <div className="flex items-end justify-between gap-6">
             <div>
               <p className="text-sm uppercase tracking-[0.26em] text-moss">Featured Listings</p>
-              <h2 className="mt-2 font-display text-4xl text-ink">Mock data for local testing</h2>
+              <h2 className="mt-2 font-display text-4xl text-ink">A clean starting point</h2>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-5 lg:grid-cols-3">
-            {featuredListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
+          {featuredListings.length > 0 ? (
+            <div className="mt-6 grid gap-5 lg:grid-cols-3">
+              {featuredListings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70 shadow-card">
+              No sample listings are shown now. Once we connect real data, this section will fill with actual posts.
+            </div>
+          )}
         </section>
       </main>
     </div>
