@@ -26,6 +26,29 @@ export function SiteFooter() {
             </div>
           </div>
         </div>
+
+        <div className="mt-8 rounded-3xl bg-white/10 p-6 text-sm backdrop-blur-sm">
+          <p>
+            <span className="font-semibold text-sky-100">Email:</span>{" "}
+            <a
+              href="mailto:bhaikasaaman@gmail.com"
+              className="underline decoration-sky-200 underline-offset-4 hover:text-sky-100"
+            >
+              bhaikasaaman@gmail.com
+            </a>
+          </p>
+          <p className="mt-3">
+            <span className="font-semibold text-sky-100">Instagram:</span>{" "}
+            <a
+              href="https://www.instagram.com/bhaikasaaman?igsh=b2xzbnY3NzYxcXg5"
+              target="_blank"
+              rel="noreferrer"
+              className="underline decoration-sky-200 underline-offset-4 hover:text-sky-100"
+            >
+              @bhaikasaaman
+            </a>
+          </p>
+        </div>
       </div>
     </footer>
   );
