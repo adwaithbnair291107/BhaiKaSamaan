@@ -8,7 +8,7 @@ export default function HomePage() {
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <section className="grid gap-8 rounded-[32px] bg-ink px-8 py-12 text-white shadow-card lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="mt-10 grid gap-8 rounded-[32px] bg-ink px-8 py-12 text-white shadow-card lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <p className="text-sm tracking-[0.12em] text-gold">
               Bhai Ka Samaan, Junior Ke Kaam, Kam Hai Daam.
