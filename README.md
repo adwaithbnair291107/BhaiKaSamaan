@@ -1,4 +1,4 @@
-# Campus Loop MVP
+# BhaiKaSamaan MVP
 
 First local MVP for a college-based student resale marketplace.
 

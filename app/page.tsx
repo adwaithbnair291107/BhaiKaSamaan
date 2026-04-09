@@ -12,7 +12,7 @@ export default function HomePage() {
           <p className="text-sm tracking-[0.24em] text-moss">
             Bhai Ka Samaan, Junior Ke Kaam, Kam Hai Daam.
           </p>
-          <h1 className="mt-4 font-display text-5xl text-ink sm:text-7xl">CampusBaazar</h1>
+          <h1 className="mt-4 font-display text-5xl text-ink sm:text-7xl">BhaiKaSamaan</h1>
         </section>
 
         <section className="mt-10 grid gap-8 rounded-[32px] bg-ink px-8 py-12 text-white shadow-card lg:grid-cols-[1.2fr_0.8fr]">
