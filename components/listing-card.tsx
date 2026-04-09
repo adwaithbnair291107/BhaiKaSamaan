@@ -3,13 +3,15 @@ import Link from "next/link";
 import type { Listing } from "@/lib/data";
 
 export function ListingCard({ listing }: { listing: Listing }) {
+  const isDataUrl = listing.image.startsWith("data:");
+
   return (
     <Link
       href={`/listings/${listing.id}`}
       className="overflow-hidden rounded-[28px] border border-ink/10 bg-white shadow-card transition hover:-translate-y-1"
     >
       <div className="relative h-52">
-        <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+        <Image src={listing.image} alt={listing.title} fill className="object-cover" unoptimized={isDataUrl} />
       </div>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">
@@ -30,7 +32,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </div>
 
         <div className="flex items-center justify-between text-sm text-ink/60">
-          <span>{listing.location}</span>
+          <span>{listing.city}</span>
           <span>{listing.postedAgo}</span>
         </div>
       </div>

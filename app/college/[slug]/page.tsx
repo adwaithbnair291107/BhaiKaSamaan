@@ -2,8 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ListingCard } from "@/components/listing-card";
 import { SiteHeader } from "@/components/site-header";
-import { categories } from "@/lib/data";
-import { getCollegeBySlug, getListingsByCollege } from "@/lib/db";
+import { categories, getCollege, getListingsByCollege } from "@/lib/data";
 
 type PageProps = {
   params: {
@@ -12,7 +11,7 @@ type PageProps = {
 };
 
 export default async function CollegePage({ params }: PageProps) {
-  const college = await getCollegeBySlug(params.slug);
+  const college = await getCollege(params.slug);
 
   if (!college) {
     notFound();

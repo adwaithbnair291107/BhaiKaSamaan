@@ -1,9 +1,17 @@
+import { submitListing } from "@/app/sell/actions";
+import { SellForm } from "@/app/sell/sell-form";
 import { SiteHeader } from "@/components/site-header";
-import { categories } from "@/lib/data";
-import { getColleges } from "@/lib/db";
+import { categories, getColleges } from "@/lib/data";
 
-export default async function SellPage() {
+type SellPageProps = {
+  searchParams?: {
+    status?: string;
+  };
+};
+
+export default async function SellPage({ searchParams }: SellPageProps) {
   const colleges = await getColleges();
+  const status = searchParams?.status;
 
   return (
     <div className="min-h-screen">
@@ -18,24 +26,67 @@ export default async function SellPage() {
             so real students can create listings.
           </p>
 
-          <form className="mt-8 grid gap-5">
+          {status === "missing" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please fill in all required fields before posting.
+            </p>
+          ) : null}
+
+          {status === "price" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please enter a valid price greater than zero.
+            </p>
+          ) : null}
+
+          {status === "image-size" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please upload an image smaller than 2 MB.
+            </p>
+          ) : null}
+
+          {status === "image-type" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please upload a JPG, PNG, or WebP image.
+            </p>
+          ) : null}
+
+          <div className="hidden">
+          <form action={submitListing} className="mt-8 grid gap-5">
             <div className="grid gap-5 md:grid-cols-2">
               <label className="grid gap-2 text-sm font-medium text-ink">
                 College
-                <select className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none">
-                  {colleges.length > 0 ? (
-                    colleges.map((college) => <option key={college.slug}>{college.name}</option>)
-                  ) : (
-                    <option>Add colleges in Supabase first</option>
-                  )}
+                <select
+                  name="collegeSlug"
+                  required
+                  className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select your college
+                  </option>
+                  {colleges.map((college) => (
+                    <option key={college.slug} value={college.slug}>
+                      {college.name}
+                    </option>
+                  ))}
                 </select>
               </label>
 
               <label className="grid gap-2 text-sm font-medium text-ink">
                 Category
-                <select className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none">
+                <select
+                  name="category"
+                  required
+                  className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select a category
+                  </option>
                   {categories.map((category) => (
-                    <option key={category}>{category}</option>
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
                   ))}
                 </select>
               </label>
@@ -45,6 +96,8 @@ export default async function SellPage() {
               <label className="grid gap-2 text-sm font-medium text-ink">
                 Title
                 <input
+                  name="title"
+                  required
                   className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
                   placeholder="Engineering maths set / JEE PYQ bundle"
                 />
@@ -53,6 +106,10 @@ export default async function SellPage() {
               <label className="grid gap-2 text-sm font-medium text-ink">
                 Price
                 <input
+                  name="price"
+                  required
+                  type="number"
+                  min="1"
                   className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
                   placeholder="850"
                 />
@@ -63,6 +120,7 @@ export default async function SellPage() {
               <label className="grid gap-2 text-sm font-medium text-ink">
                 Branch
                 <input
+                  name="branch"
                   className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
                   placeholder="CSE / Mechanical / JEE / NEET"
                 />
@@ -71,8 +129,55 @@ export default async function SellPage() {
               <label className="grid gap-2 text-sm font-medium text-ink">
                 Year or Program
                 <input
+                  name="year"
                   className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
                   placeholder="1st year / Dropper"
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-medium text-ink">
+                Seller Name
+                <input
+                  name="postedBy"
+                  required
+                  className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
+                  placeholder="Adwaith / Hostel senior / Class rep"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-medium text-ink">
+                Pickup Location
+                <input
+                  name="location"
+                  className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
+                  placeholder="Main gate / Hostel block / Library canteen"
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-medium text-ink">
+                Condition
+                <select
+                  name="condition"
+                  className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
+                  defaultValue="Good"
+                >
+                  <option value="Like New">Like New</option>
+                  <option value="Good">Good</option>
+                  <option value="Used">Used</option>
+                  <option value="Needs Review">Needs Review</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-medium text-ink">
+                Image URL
+                <input
+                  name="image"
+                  className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
+                  placeholder="https://..."
                 />
               </label>
             </div>
@@ -80,6 +185,8 @@ export default async function SellPage() {
             <label className="grid gap-2 text-sm font-medium text-ink">
               Description
               <textarea
+                name="description"
+                required
                 rows={5}
                 className="rounded-3xl border border-ink/10 bg-mist px-4 py-3 outline-none"
                 placeholder="Mention condition, edition, included extras, and pickup area."
@@ -90,13 +197,21 @@ export default async function SellPage() {
               Image upload will be connected when we add storage. For MVP testing, we’re validating the flow first.
             </div>
 
+            <div className="rounded-[24px] border border-dashed border-ink/15 bg-mist p-5 text-sm text-ink/65">
+              The image field currently accepts a direct URL. We can connect Supabase Storage after
+              this database step is live.
+            </div>
+
             <button
-              type="button"
+              type="submit"
               className="w-fit rounded-full bg-ink px-6 py-3 text-sm font-semibold text-white hover:bg-moss"
             >
-              Save draft UI
+              Post to marketplace
             </button>
           </form>
+          </div>
+
+          <SellForm colleges={colleges} categories={categories} action={submitListing} />
         </section>
       </main>
     </div>

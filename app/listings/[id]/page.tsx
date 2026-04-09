@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
-import { getListingById } from "@/lib/db";
+import { getListing } from "@/lib/data";
 
 type PageProps = {
   params: {
@@ -11,11 +11,13 @@ type PageProps = {
 };
 
 export default async function ListingDetailPage({ params }: PageProps) {
-  const listing = await getListingById(params.id);
+  const listing = await getListing(params.id);
 
   if (!listing) {
     notFound();
   }
+
+  const isDataUrl = listing.image.startsWith("data:");
 
   return (
     <div className="min-h-screen">
@@ -28,7 +30,13 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
         <section className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="relative min-h-[340px] overflow-hidden rounded-[32px] bg-white shadow-card">
-            <Image src={listing.image} alt={listing.title} fill className="object-cover" />
+            <Image
+              src={listing.image}
+              alt={listing.title}
+              fill
+              className="object-cover"
+              unoptimized={isDataUrl}
+            />
           </div>
 
           <div className="rounded-[32px] bg-white p-8 shadow-card">
@@ -45,7 +53,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
             <div className="mt-8 space-y-4 text-sm text-ink/72">
               <p>
-                <span className="font-semibold text-ink">Pickup:</span> {listing.location}
+                <span className="font-semibold text-ink">City:</span> {listing.city}
               </p>
               <p>
                 <span className="font-semibold text-ink">Seller:</span> {listing.postedBy}
