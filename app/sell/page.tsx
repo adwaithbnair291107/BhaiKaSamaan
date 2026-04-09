@@ -41,7 +41,7 @@ export default function SellPage() {
                 Title
                 <input
                   className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
-                  placeholder="HC Verma physics combo"
+                  placeholder="Engineering maths set / JEE PYQ bundle"
                 />
               </label>
 
@@ -59,7 +59,7 @@ export default function SellPage() {
                 Branch
                 <input
                   className="rounded-2xl border border-ink/10 bg-mist px-4 py-3 outline-none"
-                  placeholder="CSE / JEE / Mechanical"
+                  placeholder="CSE / Mechanical / JEE / NEET"
                 />
               </label>
 

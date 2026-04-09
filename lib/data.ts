@@ -28,12 +28,14 @@ export const colleges: College[] = [];
 export const listings: Listing[] = [];
 
 export const categories = [
-  "Books",
-  "Notes / Material",
-  "Study Tools",
-  "Electronics",
-  "Hostel / Room Essentials",
-  "Lab / Project Items"
+  "College Books",
+  "Exam Books (Competitive)",
+  "Notes & Printed Material",
+  "Study Tools & Stationery",
+  "College Accessories",
+  "Hostel & Room Essentials",
+  "Electronics & Gadgets",
+  "Lab & Project Items"
 ];
 
 export function getCollege(slug: string) {
