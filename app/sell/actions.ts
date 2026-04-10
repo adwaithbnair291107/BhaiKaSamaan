@@ -3,12 +3,104 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isRedirectError } from "next/dist/client/components/redirect";
-import { createListing, createOffer, ensureCollegeByName, getListing, updateListing } from "@/lib/data";
+import { COMPETITIVE_EXAMS_LABEL, COMPETITIVE_EXAMS_SLUG, getListing } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 
 function requireValue(formData: FormData, key: string) {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function slugifyCollegeName(name: string) {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "college"
+  );
+}
+
+async function resolveCollegeSlug(
+  supabase: ReturnType<typeof createClient>,
+  options: {
+    collegeSlug: string;
+    collegeName: string;
+    collegeCity: string;
+    isCompetitiveCategory: boolean;
+    state: string;
+    district: string;
+  }
+) {
+  if (options.collegeSlug) {
+    return options.collegeSlug;
+  }
+
+  if (options.isCompetitiveCategory) {
+    const { error } = await supabase.from("colleges").upsert(
+      {
+        slug: COMPETITIVE_EXAMS_SLUG,
+        name: COMPETITIVE_EXAMS_LABEL,
+        city: options.district || options.state || "Unknown City",
+        description: "Marketplace for competitive exam students."
+      },
+      { onConflict: "slug" }
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    return COMPETITIVE_EXAMS_SLUG;
+  }
+
+  const normalizedName = options.collegeName.trim();
+  const { data: existingCollege, error: existingCollegeError } = await supabase
+    .from("colleges")
+    .select("slug")
+    .ilike("name", normalizedName)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingCollegeError) {
+    throw existingCollegeError;
+  }
+
+  if (existingCollege?.slug) {
+    return existingCollege.slug;
+  }
+
+  const baseSlug = slugifyCollegeName(normalizedName);
+  const { data: matchingSlugs, error: slugLookupError } = await supabase
+    .from("colleges")
+    .select("slug")
+    .like("slug", `${baseSlug}%`);
+
+  if (slugLookupError) {
+    throw slugLookupError;
+  }
+
+  const existingSlugs = new Set((matchingSlugs ?? []).map((college) => college.slug));
+  let nextSlug = baseSlug;
+  let counter = 2;
+
+  while (existingSlugs.has(nextSlug)) {
+    nextSlug = `${baseSlug}-${counter}`;
+    counter += 1;
+  }
+
+  const { error: insertCollegeError } = await supabase.from("colleges").insert({
+    slug: nextSlug,
+    name: normalizedName,
+    city: options.collegeCity || "Unknown City",
+    description: `Marketplace for ${normalizedName} students.`
+  });
+
+  if (insertCollegeError) {
+    throw insertCollegeError;
+  }
+
+  return nextSlug;
 }
 
 export async function submitListing(formData: FormData) {
@@ -102,34 +194,44 @@ export async function submitListing(formData: FormData) {
       images.push(`data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`);
     }
 
-    const resolvedCollege = collegeSlug
-      ? { slug: collegeSlug }
-      : await ensureCollegeByName(
-          isCompetitiveCategory ? "Competitive Exams" : collegeName,
-          isCompetitiveCategory ? district || state : collegeCity
-        );
+    const resolvedCollegeSlug = await resolveCollegeSlug(supabase, {
+      collegeSlug,
+      collegeName,
+      collegeCity,
+      isCompetitiveCategory,
+      state,
+      district
+    });
 
     const storedCategory = isCompetitiveCategory ? examName : isCollegeAccessoriesCategory ? subcategory : category;
 
-    const listingId = await createListing({
-      title,
-      userId: user.id,
-      collegeSlug: resolvedCollege.slug,
-      category: storedCategory,
-      minPrice,
-      expectedPrice,
-      postedBy,
-      description,
-      branch: requireValue(formData, "branch") || undefined,
-      year: requireValue(formData, "year") || undefined,
-      condition: requireValue(formData, "condition") || undefined,
-      location: isCompetitiveCategory ? competitiveLocation : location || undefined,
-      images
-    });
+    const { data: createdListing, error: createListingError } = await supabase
+      .from("listings")
+      .insert({
+        title,
+        user_id: user.id,
+        college_slug: resolvedCollegeSlug,
+        category: storedCategory,
+        min_price: minPrice,
+        expected_price: expectedPrice,
+        posted_by: postedBy,
+        description,
+        branch: requireValue(formData, "branch") || null,
+        year: requireValue(formData, "year") || null,
+        condition: requireValue(formData, "condition") || "Good",
+        location: isCompetitiveCategory ? competitiveLocation : location || null,
+        image: images.length ? JSON.stringify(images) : null
+      })
+      .select("id")
+      .single();
+
+    if (createListingError || !createdListing) {
+      throw createListingError ?? new Error("Supabase did not return the created listing.");
+    }
 
     revalidatePath("/");
-    revalidatePath(`/college/${resolvedCollege.slug}`);
-    redirect(`/listings/${listingId}`);
+    revalidatePath(`/college/${resolvedCollegeSlug}`);
+    redirect(`/listings/${createdListing.id}`);
   } catch (error) {
     if (isRedirectError(error)) {
       throw error;
@@ -174,13 +276,18 @@ export async function submitOffer(formData: FormData) {
     redirect(`/listings/${listingId}?offer=low`);
   }
 
-  await createOffer({
-    listingId,
-    buyerName,
-    buyerContact: buyerContact || undefined,
+  const { error } = await supabase.from("offers").insert({
+    listing_id: listingId,
+    buyer_name: buyerName,
+    buyer_contact: buyerContact || null,
     amount,
-    message: message || undefined
+    message: message || null,
+    status: "pending"
   });
+
+  if (error) {
+    throw error;
+  }
 
   revalidatePath(`/listings/${listingId}`);
   redirect(`/listings/${listingId}?offer=sent`);
@@ -230,17 +337,23 @@ export async function saveListingChanges(formData: FormData) {
       redirect(`/listings/${listingId}?manage=range`);
     }
 
-    await updateListing({
-      id: listingId,
-      userId: user.id,
-      title,
-      postedBy,
-      description,
-      minPrice,
-      expectedPrice,
-      condition,
-      location
-    });
+    const { error: updateError } = await supabase
+      .from("listings")
+      .update({
+        title,
+        posted_by: postedBy,
+        description,
+        min_price: minPrice,
+        expected_price: expectedPrice,
+        condition,
+        location: location || null
+      })
+      .eq("id", listingId)
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      throw updateError;
+    }
 
     revalidatePath("/");
     revalidatePath(`/listings/${listingId}`);
