@@ -26,12 +26,27 @@ export type Listing = {
 export type Offer = {
   id: string;
   listingId: string;
+  buyerUserId?: string | null;
   buyerName: string;
   buyerContact?: string | null;
   amount: number;
   message?: string | null;
   status: string;
   createdAt: string;
+};
+
+export type OfferMessage = {
+  id: string;
+  offerId: string;
+  senderUserId?: string | null;
+  senderRole: "buyer" | "seller" | "system";
+  senderName: string;
+  body: string;
+  createdAt: string;
+};
+
+export type OfferThread = Offer & {
+  messages: OfferMessage[];
 };
 
 export type College = {
@@ -74,11 +89,22 @@ type ListingRow = {
 type OfferRow = {
   id: string;
   listing_id: string;
+  buyer_user_id: string | null;
   buyer_name: string;
   buyer_contact: string | null;
   amount: number;
   message: string | null;
   status: string;
+  created_at: string;
+};
+
+type OfferMessageRow = {
+  id: string;
+  offer_id: string;
+  sender_user_id: string | null;
+  sender_role: "buyer" | "seller" | "system";
+  sender_name: string;
+  body: string;
   created_at: string;
 };
 export const categories = ["Competitive Exam Books", "College Accessories"];
@@ -377,6 +403,21 @@ export async function getListingsByUser(userId: string): Promise<Listing[]> {
   return listingRows.map((listing) => mapListing(listing, collegesBySlug));
 }
 
+export async function getRecentListings(limit = 6): Promise<Listing[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  const [collegeRows, listingRows] = await Promise.all([
+    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
+    querySupabase<ListingRow[]>(`listings?select=*&order=created_at.desc&limit=${limit}`)
+  ]);
+
+  const collegesBySlug = new Map(collegeRows.map((college) => [college.slug, college]));
+  return listingRows.map((listing) => mapListing(listing, collegesBySlug));
+}
+
 export async function getListing(id: string): Promise<Listing | null> {
   const config = getSupabaseConfig();
   if (!config) {
@@ -454,6 +495,7 @@ function mapOffer(row: OfferRow): Offer {
   return {
     id: row.id,
     listingId: row.listing_id,
+    buyerUserId: row.buyer_user_id,
     buyerName: row.buyer_name,
     buyerContact: row.buyer_contact,
     amount: Number(row.amount),
@@ -463,6 +505,46 @@ function mapOffer(row: OfferRow): Offer {
   };
 }
 
+function mapOfferMessage(row: OfferMessageRow): OfferMessage {
+  return {
+    id: row.id,
+    offerId: row.offer_id,
+    senderUserId: row.sender_user_id,
+    senderRole: row.sender_role,
+    senderName: row.sender_name,
+    body: row.body,
+    createdAt: row.created_at
+  };
+}
+
+async function getOfferMessagesByOfferIds(offerIds: string[]): Promise<Map<string, OfferMessage[]>> {
+  if (offerIds.length === 0) {
+    return new Map();
+  }
+
+  const serializedIds = offerIds.map((offerId) => `"${offerId}"`).join(",");
+  const rows = await querySupabase<OfferMessageRow[]>(
+    `offer_messages?select=id,offer_id,sender_user_id,sender_role,sender_name,body,created_at&offer_id=in.(${serializedIds})&order=created_at.asc`
+  );
+
+  const messagesByOfferId = new Map<string, OfferMessage[]>();
+  for (const row of rows) {
+    const message = mapOfferMessage(row);
+    const thread = messagesByOfferId.get(message.offerId) ?? [];
+    thread.push(message);
+    messagesByOfferId.set(message.offerId, thread);
+  }
+
+  return messagesByOfferId;
+}
+
+function mergeOfferMessages(offers: Offer[], messagesByOfferId: Map<string, OfferMessage[]>): OfferThread[] {
+  return offers.map((offer) => ({
+    ...offer,
+    messages: messagesByOfferId.get(offer.id) ?? []
+  }));
+}
+
 export async function getOffersByListing(listingId: string): Promise<Offer[]> {
   const config = getSupabaseConfig();
   if (!config) {
@@ -470,12 +552,35 @@ export async function getOffersByListing(listingId: string): Promise<Offer[]> {
   }
 
   const offerRows = await querySupabase<OfferRow[]>(
-    `offers?select=id,listing_id,buyer_name,buyer_contact,amount,message,status,created_at&listing_id=eq.${encodeURIComponent(
+    `offers?select=id,listing_id,buyer_user_id,buyer_name,buyer_contact,amount,message,status,created_at&listing_id=eq.${encodeURIComponent(
       listingId
     )}&order=created_at.desc`
   );
 
   return offerRows.map(mapOffer);
+}
+
+export async function getOfferThreadsByListing(listingId: string): Promise<OfferThread[]> {
+  const offers = await getOffersByListing(listingId);
+  const messagesByOfferId = await getOfferMessagesByOfferIds(offers.map((offer) => offer.id));
+  return mergeOfferMessages(offers, messagesByOfferId);
+}
+
+export async function getOfferThreadsForBuyer(listingId: string, buyerUserId: string): Promise<OfferThread[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  const offerRows = await querySupabase<OfferRow[]>(
+    `offers?select=id,listing_id,buyer_user_id,buyer_name,buyer_contact,amount,message,status,created_at&listing_id=eq.${encodeURIComponent(
+      listingId
+    )}&buyer_user_id=eq.${encodeURIComponent(buyerUserId)}&order=created_at.desc`
+  );
+
+  const offers = offerRows.map(mapOffer);
+  const messagesByOfferId = await getOfferMessagesByOfferIds(offers.map((offer) => offer.id));
+  return mergeOfferMessages(offers, messagesByOfferId);
 }
 
 type CreateOfferInput = {

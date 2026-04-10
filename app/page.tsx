@@ -1,9 +1,10 @@
 import Link from "next/link";
+import { ListingCard } from "@/components/listing-card";
 import { SiteHeader } from "@/components/site-header";
-import { categories, getColleges } from "@/lib/data";
+import { categories, getColleges, getRecentListings } from "@/lib/data";
 
 export default async function HomePage() {
-  const colleges = await getColleges();
+  const [colleges, recentListings] = await Promise.all([getColleges(), getRecentListings()]);
 
   return (
     <div className="min-h-screen">
@@ -127,9 +128,17 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="mt-6 rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70 shadow-card">
-            No sample listings are shown now. Once we connect real data, this section will fill with actual posts.
-          </div>
+          {recentListings.length > 0 ? (
+            <div className="mt-6 grid gap-5 lg:grid-cols-2 xl:grid-cols-3">
+              {recentListings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6 rounded-[28px] border border-dashed border-ink/20 bg-white p-8 text-ink/70 shadow-card">
+              No live listings yet. Post the first item from the seller flow and it will appear here for buyers.
+            </div>
+          )}
         </section>
       </main>
     </div>

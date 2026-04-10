@@ -43,11 +43,24 @@ alter table public.listings alter column expected_price set not null;
 create table if not exists public.offers (
   id uuid primary key default gen_random_uuid(),
   listing_id uuid not null references public.listings(id) on delete cascade,
+  buyer_user_id uuid references auth.users(id) on delete set null,
   buyer_name text not null,
   buyer_contact text,
   amount numeric(10, 2) not null check (amount > 0),
   message text,
   status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+alter table public.offers add column if not exists buyer_user_id uuid references auth.users(id) on delete set null;
+
+create table if not exists public.offer_messages (
+  id uuid primary key default gen_random_uuid(),
+  offer_id uuid not null references public.offers(id) on delete cascade,
+  sender_user_id uuid references auth.users(id) on delete set null,
+  sender_role text not null check (sender_role in ('buyer', 'seller', 'system')),
+  sender_name text not null,
+  body text not null,
   created_at timestamptz not null default now()
 );
 
@@ -75,3 +88,5 @@ end $$;
 create index if not exists listings_college_slug_idx on public.listings (college_slug);
 create index if not exists listings_created_at_idx on public.listings (created_at desc);
 create index if not exists offers_listing_id_idx on public.offers (listing_id);
+create index if not exists offers_buyer_user_id_idx on public.offers (buyer_user_id);
+create index if not exists offer_messages_offer_id_idx on public.offer_messages (offer_id);

@@ -11,6 +11,56 @@ function requireValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function parseStoredImages(value: string) {
+  if (!value) {
+    return [] as string[];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed)
+      ? parsed.filter((image): image is string => typeof image === "string" && image.trim().length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+async function collectUploadedImages(formData: FormData, errorBasePath: string) {
+  const imageFiles = formData.getAll("imageFiles");
+  const images: string[] = [];
+  let totalImageBytes = 0;
+
+  if (imageFiles.length > 3) {
+    redirect(`${errorBasePath}image-count`);
+  }
+
+  for (const imageFile of imageFiles) {
+    if (!(imageFile instanceof File) || imageFile.size === 0) {
+      continue;
+    }
+
+    if (imageFile.size > 2 * 1024 * 1024) {
+      redirect(`${errorBasePath}image-size`);
+    }
+
+    totalImageBytes += imageFile.size;
+    if (totalImageBytes > 6 * 1024 * 1024) {
+      redirect(`${errorBasePath}image-total-size`);
+    }
+
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(imageFile.type)) {
+      redirect(`${errorBasePath}image-type`);
+    }
+
+    const bytes = await imageFile.arrayBuffer();
+    images.push(`data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`);
+  }
+
+  return images;
+}
+
 function slugifyCollegeName(name: string) {
   return (
     name
@@ -163,36 +213,7 @@ export async function submitListing(formData: FormData) {
       redirect("/sell?status=price-range");
     }
 
-    const imageFiles = formData.getAll("imageFiles");
-    const images: string[] = [];
-    let totalImageBytes = 0;
-
-    if (imageFiles.length > 3) {
-      redirect("/sell?status=image-count");
-    }
-
-    for (const imageFile of imageFiles) {
-      if (!(imageFile instanceof File) || imageFile.size === 0) {
-        continue;
-      }
-
-      if (imageFile.size > 2 * 1024 * 1024) {
-        redirect("/sell?status=image-size");
-      }
-
-      totalImageBytes += imageFile.size;
-      if (totalImageBytes > 6 * 1024 * 1024) {
-        redirect("/sell?status=image-total-size");
-      }
-
-      const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-      if (!allowedTypes.has(imageFile.type)) {
-        redirect("/sell?status=image-type");
-      }
-
-      const bytes = await imageFile.arrayBuffer();
-      images.push(`data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`);
-    }
+    const images = await collectUploadedImages(formData, "/sell?status=");
 
     const resolvedCollegeSlug = await resolveCollegeSlug(supabase, {
       collegeSlug,
@@ -277,17 +298,98 @@ export async function submitOffer(formData: FormData) {
     redirect(`/listings/${listingId}?offer=low`);
   }
 
-  const { error } = await supabase.from("offers").insert({
-    listing_id: listingId,
-    buyer_name: buyerName,
-    buyer_contact: buyerContact || null,
-    amount,
-    message: message || null,
-    status: "pending"
+  const { data: createdOffer, error } = await supabase
+    .from("offers")
+    .insert({
+      listing_id: listingId,
+      buyer_user_id: user.id,
+      buyer_name: buyerName,
+      buyer_contact: buyerContact || null,
+      amount,
+      message: message || null,
+      status: "open"
+    })
+    .select("id")
+    .single();
+
+  if (error || !createdOffer) {
+    throw error;
+  }
+
+  if (message) {
+    const { error: messageError } = await supabase.from("offer_messages").insert({
+      offer_id: createdOffer.id,
+      sender_user_id: user.id,
+      sender_role: "buyer",
+      sender_name: buyerName,
+      body: message
+    });
+
+    if (messageError) {
+      throw messageError;
+    }
+  }
+
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/listings/${listingId}?offer=sent`);
+}
+
+export async function sendOfferMessage(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const listingId = requireValue(formData, "listingId");
+  const offerId = requireValue(formData, "offerId");
+  const body = requireValue(formData, "body");
+  const senderRole = requireValue(formData, "senderRole");
+  const senderName = requireValue(formData, "senderName");
+
+  if (!listingId) {
+    redirect("/");
+  }
+
+  if (!user) {
+    redirect(`/listings/${listingId}?offer=auth`);
+  }
+
+  if (!offerId || !body || !senderName || (senderRole !== "buyer" && senderRole !== "seller")) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  const listing = await getListing(listingId);
+  if (!listing) {
+    redirect("/");
+  }
+
+  const { data: offer, error: offerError } = await supabase
+    .from("offers")
+    .select("id,buyer_user_id")
+    .eq("id", offerId)
+    .eq("listing_id", listingId)
+    .single();
+
+  if (offerError || !offer) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  const isSeller = listing.userId === user.id;
+  const isBuyer = offer.buyer_user_id === user.id;
+  if ((senderRole === "seller" && !isSeller) || (senderRole === "buyer" && !isBuyer)) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  const { error: messageError } = await supabase.from("offer_messages").insert({
+    offer_id: offerId,
+    sender_user_id: user.id,
+    sender_role: senderRole,
+    sender_name: senderName,
+    body
   });
 
-  if (error) {
-    throw error;
+  if (messageError) {
+    throw messageError;
   }
 
   revalidatePath(`/listings/${listingId}`);
@@ -310,6 +412,8 @@ export async function saveListingChanges(formData: FormData) {
     const minPriceValue = requireValue(formData, "minPrice");
     const condition = requireValue(formData, "condition");
     const location = requireValue(formData, "location");
+    const replaceImages = requireValue(formData, "replaceImages") === "yes";
+    const existingImages = parseStoredImages(requireValue(formData, "existingImages"));
 
     if (!listingId) {
       redirect("/");
@@ -338,6 +442,10 @@ export async function saveListingChanges(formData: FormData) {
       redirect(`/listings/${listingId}?manage=range`);
     }
 
+    const uploadedImages = await collectUploadedImages(formData, `/listings/${listingId}?manage=`);
+    const mergedImages = replaceImages ? uploadedImages : [...existingImages, ...uploadedImages];
+    const nextImages = mergedImages.length > 3 ? mergedImages.slice(-3) : mergedImages;
+
     const { error: updateError } = await supabase
       .from("listings")
       .update({
@@ -348,7 +456,8 @@ export async function saveListingChanges(formData: FormData) {
         min_price: minPrice,
         expected_price: expectedPrice,
         condition,
-        location: location || null
+        location: location || null,
+        image: nextImages.length ? JSON.stringify(nextImages) : null
       })
       .eq("id", listingId)
       .eq("user_id", user.id);
@@ -368,4 +477,37 @@ export async function saveListingChanges(formData: FormData) {
     console.error("Failed to save listing changes", error);
     redirect(`/listings/${listingId}?manage=error`);
   }
+}
+
+export async function deleteListing(formData: FormData) {
+  const listingId = requireValue(formData, "listingId");
+
+  if (!listingId) {
+    redirect("/sell");
+  }
+
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/sell?status=auth");
+  }
+
+  const listing = await getListing(listingId);
+  if (!listing || listing.userId !== user.id) {
+    redirect(`/listings/${listingId}?manage=denied`);
+  }
+
+  const { error } = await supabase.from("listings").delete().eq("id", listingId).eq("user_id", user.id);
+  if (error) {
+    throw error;
+  }
+
+  revalidatePath("/");
+  revalidatePath("/sell");
+  revalidatePath(`/listings/${listingId}`);
+  revalidatePath(`/college/${listing.collegeSlug}`);
+  redirect("/sell?status=deleted");
 }

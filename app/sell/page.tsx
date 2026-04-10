@@ -1,4 +1,4 @@
-import { submitListing } from "@/app/sell/actions";
+import { deleteListing, submitListing } from "@/app/sell/actions";
 import { SellForm } from "@/app/sell/sell-form";
 import { AuthButton } from "@/components/auth-button";
 import { SiteHeader } from "@/components/site-header";
@@ -90,6 +90,12 @@ export default async function SellPage({ searchParams }: SellPageProps) {
           {status === "error" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               The listing could not be posted. Please try again, and if you uploaded images, retry with smaller files.
+            </p>
+          ) : null}
+
+          {status === "deleted" ? (
+            <p className="mt-6 rounded-2xl bg-moss/10 px-4 py-3 text-sm text-moss">
+              Listing deleted successfully.
             </p>
           ) : null}
 
@@ -294,6 +300,15 @@ export default async function SellPage({ searchParams }: SellPageProps) {
                           >
                             Edit listing
                           </Link>
+                          <form action={deleteListing}>
+                            <input type="hidden" name="listingId" value={listing.id} />
+                            <button
+                              type="submit"
+                              className="rounded-full border border-clay/30 px-4 py-2 text-sm font-semibold text-clay transition hover:bg-clay/10"
+                            >
+                              Delete listing
+                            </button>
+                          </form>
                         </div>
                       </div>
                     ))}
