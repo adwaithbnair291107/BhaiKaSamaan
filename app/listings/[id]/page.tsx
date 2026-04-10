@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { ConversationAutoRefresh } from "@/components/conversation-auto-refresh";
 import { ListingDetailView } from "@/components/listing-detail-view";
 import { SiteHeader } from "@/components/site-header";
 import { getListing, getOfferThreadsByListing, getOfferThreadsForBuyer } from "@/lib/data";
@@ -31,12 +32,14 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   const canManageListing = Boolean(user && listing.userId === user.id);
   const buyerThreads = user && !canManageListing ? await getOfferThreadsForBuyer(params.id, user.id) : [];
   const sellerThreads = canManageListing ? await getOfferThreadsByListing(params.id) : [];
+  const shouldAutoRefreshConversations = sellerThreads.length > 0 || buyerThreads.length > 0;
 
   return (
     <div className="min-h-screen">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-10">
+        <ConversationAutoRefresh enabled={shouldAutoRefreshConversations} />
         <ListingDetailView
           listing={listing}
           offerStatus={offerStatus}

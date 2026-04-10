@@ -1,6 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { deleteListing, saveListingChanges, sendOfferMessage, submitOffer } from "@/app/sell/actions";
+import {
+  closeOfferConversation,
+  deleteListing,
+  saveListingChanges,
+  sendOfferMessage,
+  submitOffer
+} from "@/app/sell/actions";
 import { AuthButton } from "@/components/auth-button";
 import { ListingImageGallery } from "@/components/listing-image-gallery";
 import {
@@ -122,6 +128,12 @@ export function ListingDetailView({
             </p>
           ) : null}
 
+          {offerStatus === "closed" ? (
+            <p className="mt-6 rounded-2xl bg-ink/5 px-4 py-3 text-sm text-ink/70">
+              This conversation has been closed by the seller.
+            </p>
+          ) : null}
+
           {userEmail ? (
             <form action={submitOffer} className="mt-6 grid gap-5">
               <input type="hidden" name="listingId" value={listing.id} />
@@ -214,9 +226,23 @@ export function ListingDetailView({
                         {thread.buyerContact ? ` • ${thread.buyerContact}` : ""}
                       </p>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-moss">
-                      {thread.status}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-moss">
+                        {thread.status}
+                      </span>
+                      {thread.status !== "closed" ? (
+                        <form action={closeOfferConversation}>
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <input type="hidden" name="offerId" value={thread.id} />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-clay/30 hover:text-clay"
+                          >
+                            Close conversation
+                          </button>
+                        </form>
+                      ) : null}
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-3">
@@ -234,22 +260,28 @@ export function ListingDetailView({
                     )}
                   </div>
 
-                  <form action={sendOfferMessage} className="mt-4 grid gap-3">
-                    <input type="hidden" name="listingId" value={listing.id} />
-                    <input type="hidden" name="offerId" value={thread.id} />
-                    <input type="hidden" name="senderRole" value="seller" />
-                    <input type="hidden" name="senderName" value={listing.postedBy} />
-                    <textarea
-                      name="body"
-                      rows={3}
-                      required
-                      className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
-                      placeholder="Reply to this buyer"
-                    />
-                    <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                      Send reply
-                    </button>
-                  </form>
+                  {thread.status !== "closed" ? (
+                    <form action={sendOfferMessage} className="mt-4 grid gap-3">
+                      <input type="hidden" name="listingId" value={listing.id} />
+                      <input type="hidden" name="offerId" value={thread.id} />
+                      <input type="hidden" name="senderRole" value="seller" />
+                      <input type="hidden" name="senderName" value={listing.postedBy} />
+                      <textarea
+                        name="body"
+                        rows={3}
+                        required
+                        className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
+                        placeholder="Reply to this buyer"
+                      />
+                      <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
+                        Send reply
+                      </button>
+                    </form>
+                  ) : (
+                    <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
+                      This conversation is closed. The buyer can still read the thread, but no new messages can be sent.
+                    </div>
+                  )}
                 </article>
               ))
             ) : (
@@ -268,7 +300,12 @@ export function ListingDetailView({
           <div className="mt-6 grid gap-5">
             {buyerThreads.map((thread) => (
               <article key={thread.id} className="rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-5">
-                <p className="text-sm font-semibold text-ink">Your offer: Rs. {thread.amount}</p>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-ink">Your offer: Rs. {thread.amount}</p>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-moss">
+                    {thread.status}
+                  </span>
+                </div>
                 <div className="mt-4 grid gap-3">
                   {thread.messages.length > 0 ? (
                     thread.messages.map((message) => (
@@ -284,22 +321,28 @@ export function ListingDetailView({
                   )}
                 </div>
 
-                <form action={sendOfferMessage} className="mt-4 grid gap-3">
-                  <input type="hidden" name="listingId" value={listing.id} />
-                  <input type="hidden" name="offerId" value={thread.id} />
-                  <input type="hidden" name="senderRole" value="buyer" />
-                  <input type="hidden" name="senderName" value={userName || userEmail || thread.buyerName} />
-                  <textarea
-                    name="body"
-                    rows={3}
-                    required
-                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
-                    placeholder="Send a message to the seller"
-                  />
-                  <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                    Send message
-                  </button>
-                </form>
+                {thread.status !== "closed" ? (
+                  <form action={sendOfferMessage} className="mt-4 grid gap-3">
+                    <input type="hidden" name="listingId" value={listing.id} />
+                    <input type="hidden" name="offerId" value={thread.id} />
+                    <input type="hidden" name="senderRole" value="buyer" />
+                    <input type="hidden" name="senderName" value={userName || userEmail || thread.buyerName} />
+                    <textarea
+                      name="body"
+                      rows={3}
+                      required
+                      className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                      placeholder="Send a message to the seller"
+                    />
+                    <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
+                      Send message
+                    </button>
+                  </form>
+                ) : (
+                  <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
+                    This conversation was closed by the seller.
+                  </div>
+                )}
               </article>
             ))}
           </div>

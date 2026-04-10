@@ -365,7 +365,7 @@ export async function sendOfferMessage(formData: FormData) {
 
   const { data: offer, error: offerError } = await supabase
     .from("offers")
-    .select("id,buyer_user_id")
+    .select("id,buyer_user_id,status")
     .eq("id", offerId)
     .eq("listing_id", listingId)
     .single();
@@ -378,6 +378,10 @@ export async function sendOfferMessage(formData: FormData) {
   const isBuyer = offer.buyer_user_id === user.id;
   if ((senderRole === "seller" && !isSeller) || (senderRole === "buyer" && !isBuyer)) {
     redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  if (offer.status === "closed") {
+    redirect(`/listings/${listingId}?offer=closed`);
   }
 
   const { error: messageError } = await supabase.from("offer_messages").insert({
@@ -394,6 +398,67 @@ export async function sendOfferMessage(formData: FormData) {
 
   revalidatePath(`/listings/${listingId}`);
   redirect(`/listings/${listingId}?offer=sent`);
+}
+
+export async function closeOfferConversation(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const listingId = requireValue(formData, "listingId");
+  const offerId = requireValue(formData, "offerId");
+
+  if (!listingId) {
+    redirect("/");
+  }
+
+  if (!user) {
+    redirect(`/listings/${listingId}?offer=auth`);
+  }
+
+  const listing = await getListing(listingId);
+  if (!listing || listing.userId !== user.id) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  const { data: offer, error: offerError } = await supabase
+    .from("offers")
+    .select("id,status")
+    .eq("id", offerId)
+    .eq("listing_id", listingId)
+    .single();
+
+  if (offerError || !offer) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  if (offer.status !== "closed") {
+    const { error: closeError } = await supabase
+      .from("offers")
+      .update({ status: "closed" })
+      .eq("id", offerId)
+      .eq("listing_id", listingId);
+
+    if (closeError) {
+      throw closeError;
+    }
+
+    const { error: systemMessageError } = await supabase.from("offer_messages").insert({
+      offer_id: offerId,
+      sender_user_id: user.id,
+      sender_role: "system",
+      sender_name: listing.postedBy,
+      body: "This conversation was closed by the seller."
+    });
+
+    if (systemMessageError) {
+      throw systemMessageError;
+    }
+  }
+
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/listings/${listingId}?offer=closed`);
 }
 
 export async function saveListingChanges(formData: FormData) {
