@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createListing, ensureCollegeByName } from "@/lib/data";
+import { createListing, createOffer, ensureCollegeByName, getListing } from "@/lib/data";
 
 function requireValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -23,12 +23,13 @@ export async function submitListing(formData: FormData) {
   const address = requireValue(formData, "address");
   const postedBy = requireValue(formData, "postedBy");
   const description = requireValue(formData, "description");
-  const priceValue = requireValue(formData, "price");
+  const expectedPriceValue = requireValue(formData, "expectedPrice");
+  const minPriceValue = requireValue(formData, "minPrice");
   const isCompetitiveCategory = category === "Competitive Exam Books";
   const isCollegeAccessoriesCategory = category === "College Accessories";
   const competitiveLocation = [address, district, state].filter(Boolean).join(", ");
 
-  if (!title || !category || !postedBy || !description || !priceValue) {
+  if (!title || !category || !postedBy || !description || !expectedPriceValue || !minPriceValue) {
     redirect("/sell?status=missing");
   }
 
@@ -48,9 +49,14 @@ export async function submitListing(formData: FormData) {
     redirect("/sell?status=location");
   }
 
-  const price = Number(priceValue);
-  if (Number.isNaN(price) || price <= 0) {
+  const expectedPrice = Number(expectedPriceValue);
+  const minPrice = Number(minPriceValue);
+  if (Number.isNaN(expectedPrice) || Number.isNaN(minPrice) || expectedPrice <= 0 || minPrice <= 0) {
     redirect("/sell?status=price");
+  }
+
+  if (expectedPrice < minPrice) {
+    redirect("/sell?status=price-range");
   }
 
   const imageFile = formData.get("imageFile");
@@ -83,7 +89,8 @@ export async function submitListing(formData: FormData) {
     title,
     collegeSlug: resolvedCollege.slug,
     category: storedCategory,
-    price,
+    minPrice,
+    expectedPrice,
     postedBy,
     description,
     branch: requireValue(formData, "branch") || undefined,
@@ -96,4 +103,41 @@ export async function submitListing(formData: FormData) {
   revalidatePath("/");
   revalidatePath(`/college/${resolvedCollege.slug}`);
   redirect(`/listings/${listingId}`);
+}
+
+export async function submitOffer(formData: FormData) {
+  const listingId = requireValue(formData, "listingId");
+  const buyerName = requireValue(formData, "buyerName");
+  const buyerContact = requireValue(formData, "buyerContact");
+  const message = requireValue(formData, "message");
+  const amountValue = requireValue(formData, "amount");
+
+  if (!listingId || !buyerName || !amountValue) {
+    redirect(`/listings/${listingId}?offer=missing`);
+  }
+
+  const listing = await getListing(listingId);
+  if (!listing) {
+    redirect("/");
+  }
+
+  const amount = Number(amountValue);
+  if (Number.isNaN(amount) || amount <= 0) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  if (amount < listing.minPrice) {
+    redirect(`/listings/${listingId}?offer=low`);
+  }
+
+  await createOffer({
+    listingId,
+    buyerName,
+    buyerContact: buyerContact || undefined,
+    amount,
+    message: message || undefined
+  });
+
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/listings/${listingId}?offer=sent`);
 }

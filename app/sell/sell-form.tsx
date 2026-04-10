@@ -340,9 +340,9 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
           </label>
 
           <label className="grid gap-3 text-sm font-medium text-ink">
-            <span className="text-[0.95rem] font-semibold">Price</span>
+            <span className="text-[0.95rem] font-semibold">Expected Price</span>
             <input
-              name="price"
+              name="expectedPrice"
               required
               type="number"
               min="1"
@@ -350,6 +350,24 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
               placeholder="850"
             />
           </label>
+        </div>
+
+        <div className="mt-6 grid gap-6 md:grid-cols-2">
+          <label className="grid gap-3 text-sm font-medium text-ink">
+            <span className="text-[0.95rem] font-semibold">Minimum Price</span>
+            <input
+              name="minPrice"
+              required
+              type="number"
+              min="1"
+              className={fieldClassName}
+              placeholder="700"
+            />
+          </label>
+
+          <div className="rounded-[24px] border border-dashed border-ink/15 bg-[#f7f1e3] px-5 py-4 text-sm text-ink/65">
+            Buyers will only see the expected price. Offers below your minimum price will be rejected automatically.
+          </div>
         </div>
 
         {!isCompetitiveCategory ? (
@@ -373,7 +391,7 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
               name="postedBy"
               required
               className={fieldClassName}
-              placeholder="Adwaith / Hostel senior / Class rep"
+              placeholder="Your name"
             />
           </label>
 

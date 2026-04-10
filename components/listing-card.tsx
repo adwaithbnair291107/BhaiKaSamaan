@@ -21,7 +21,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <h3 className="mt-2 text-lg font-semibold text-ink">{listing.title}</h3>
           </div>
           <p className="rounded-full bg-gold/25 px-3 py-1 text-sm font-semibold text-ink">
-            Rs. {listing.price}
+            Rs. {listing.expectedPrice}
           </p>
         </div>
 

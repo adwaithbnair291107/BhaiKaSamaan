@@ -15,7 +15,9 @@ create table if not exists public.listings (
   year text,
   category text not null,
   condition text not null default 'Good',
-  price numeric(10, 2) not null check (price > 0),
+  price numeric(10, 2),
+  min_price numeric(10, 2),
+  expected_price numeric(10, 2),
   location text default 'Campus pickup',
   posted_by text not null,
   description text not null,
@@ -23,5 +25,51 @@ create table if not exists public.listings (
   created_at timestamptz not null default now()
 );
 
+alter table public.listings add column if not exists min_price numeric(10, 2);
+alter table public.listings add column if not exists expected_price numeric(10, 2);
+alter table public.listings add column if not exists price numeric(10, 2);
+
+update public.listings
+set
+  min_price = coalesce(min_price, price),
+  expected_price = coalesce(expected_price, price)
+where min_price is null or expected_price is null;
+
+alter table public.listings alter column min_price set not null;
+alter table public.listings alter column expected_price set not null;
+
+create table if not exists public.offers (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  buyer_name text not null,
+  buyer_contact text,
+  amount numeric(10, 2) not null check (amount > 0),
+  message text,
+  status text not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint where conname = 'listings_min_price_positive'
+  ) then
+    alter table public.listings add constraint listings_min_price_positive check (min_price > 0);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'listings_expected_price_positive'
+  ) then
+    alter table public.listings add constraint listings_expected_price_positive check (expected_price > 0);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'listings_expected_gte_min'
+  ) then
+    alter table public.listings add constraint listings_expected_gte_min check (expected_price >= min_price);
+  end if;
+end $$;
+
 create index if not exists listings_college_slug_idx on public.listings (college_slug);
 create index if not exists listings_created_at_idx on public.listings (created_at desc);
+create index if not exists offers_listing_id_idx on public.offers (listing_id);

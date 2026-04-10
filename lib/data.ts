@@ -11,13 +11,25 @@ export type Listing = {
   year?: string | null;
   category: string;
   condition: string;
-  price: number;
+  expectedPrice: number;
+  minPrice: number;
   city: string;
   location?: string | null;
   postedBy: string;
   postedAgo: string;
   description: string;
   image: string;
+};
+
+export type Offer = {
+  id: string;
+  listingId: string;
+  buyerName: string;
+  buyerContact?: string | null;
+  amount: number;
+  message?: string | null;
+  status: string;
+  createdAt: string;
 };
 
 export type College = {
@@ -43,11 +55,24 @@ type ListingRow = {
   year: string | null;
   category: string;
   condition: string;
-  price: number;
+  price?: number | null;
+  min_price?: number | null;
+  expected_price?: number | null;
   location: string | null;
   posted_by: string;
   description: string;
   image: string | null;
+  created_at: string;
+};
+
+type OfferRow = {
+  id: string;
+  listing_id: string;
+  buyer_name: string;
+  buyer_contact: string | null;
+  amount: number;
+  message: string | null;
+  status: string;
   created_at: string;
 };
 export const categories = ["Competitive Exam Books", "College Accessories"];
@@ -168,7 +193,8 @@ function mapListing(row: ListingRow, collegesBySlug: Map<string, CollegeRow>): L
     year: row.year ?? undefined,
     category: row.category,
     condition: row.condition,
-    price: Number(row.price),
+    minPrice: Number(row.min_price ?? row.price ?? 0),
+    expectedPrice: Number(row.expected_price ?? row.price ?? 0),
     city: college?.city ?? "Unknown City",
     location: row.location,
     postedBy: row.posted_by,
@@ -295,7 +321,7 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
   const [collegeRows, listingRows] = await Promise.all([
     querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
     querySupabase<ListingRow[]>(
-      `listings?select=id,college_slug,title,branch,year,category,condition,price,location,posted_by,description,image,created_at&college_slug=eq.${encodeURIComponent(
+      `listings?select=*&college_slug=eq.${encodeURIComponent(
         slug
       )}&order=created_at.desc`
     )
@@ -314,7 +340,7 @@ export async function getListing(id: string): Promise<Listing | null> {
   const [collegeRows, listingRows] = await Promise.all([
     querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
     querySupabase<ListingRow[]>(
-      `listings?select=id,college_slug,title,branch,year,category,condition,price,location,posted_by,description,image,created_at&id=eq.${encodeURIComponent(
+      `listings?select=*&id=eq.${encodeURIComponent(
         id
       )}&limit=1`
     )
@@ -333,7 +359,8 @@ type CreateListingInput = {
   title: string;
   collegeSlug: string;
   category: string;
-  price: number;
+  minPrice: number;
+  expectedPrice: number;
   branch?: string;
   year?: string;
   description: string;
@@ -357,7 +384,8 @@ export async function createListing(input: CreateListingInput): Promise<string> 
         year: input.year || null,
         category: input.category,
         condition: input.condition || "Good",
-        price: input.price,
+        min_price: input.minPrice,
+        expected_price: input.expectedPrice,
         location: input.location || null,
         posted_by: input.postedBy,
         description: input.description,
@@ -369,6 +397,68 @@ export async function createListing(input: CreateListingInput): Promise<string> 
   const created = rows[0];
   if (!created) {
     throw new Error("Supabase did not return the created listing.");
+  }
+
+  return created.id;
+}
+
+function mapOffer(row: OfferRow): Offer {
+  return {
+    id: row.id,
+    listingId: row.listing_id,
+    buyerName: row.buyer_name,
+    buyerContact: row.buyer_contact,
+    amount: Number(row.amount),
+    message: row.message,
+    status: row.status,
+    createdAt: row.created_at
+  };
+}
+
+export async function getOffersByListing(listingId: string): Promise<Offer[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  const offerRows = await querySupabase<OfferRow[]>(
+    `offers?select=id,listing_id,buyer_name,buyer_contact,amount,message,status,created_at&listing_id=eq.${encodeURIComponent(
+      listingId
+    )}&order=created_at.desc`
+  );
+
+  return offerRows.map(mapOffer);
+}
+
+type CreateOfferInput = {
+  listingId: string;
+  buyerName: string;
+  buyerContact?: string;
+  amount: number;
+  message?: string;
+};
+
+export async function createOffer(input: CreateOfferInput): Promise<string> {
+  const rows = await querySupabase<Array<{ id: string }>>("offers?select=id", {
+    method: "POST",
+    headers: {
+      Prefer: "return=representation"
+    },
+    body: JSON.stringify([
+      {
+        listing_id: input.listingId,
+        buyer_name: input.buyerName,
+        buyer_contact: input.buyerContact || null,
+        amount: input.amount,
+        message: input.message || null,
+        status: "pending"
+      }
+    ])
+  });
+
+  const created = rows[0];
+  if (!created) {
+    throw new Error("Supabase did not return the created offer.");
   }
 
   return created.id;

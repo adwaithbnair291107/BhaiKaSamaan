@@ -38,6 +38,12 @@ export default async function SellPage({ searchParams }: SellPageProps) {
             </p>
           ) : null}
 
+          {status === "price-range" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Expected price must be greater than or equal to minimum price.
+            </p>
+          ) : null}
+
           {status === "location" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               Please enter a location for competitive exam listings.
