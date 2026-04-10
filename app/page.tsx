@@ -10,13 +10,13 @@ export default async function HomePage() {
     <div className="min-h-screen">
       <SiteHeader />
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
-        <section className="mt-8 text-center">
-          <h1 className="mt-4 font-display text-5xl text-ink sm:text-7xl">BhaiKaSamaan</h1>
-          <p className="mt-4 text-sm tracking-[0.24em] text-moss">Junior Ke Kaam, Kam Hai Daam.</p>
+      <main className="mx-auto max-w-6xl px-6 py-6">
+        <section className="mt-2 text-center">
+          <h1 className="font-display text-5xl leading-[0.92] text-ink sm:text-7xl">BhaiKaSamaan</h1>
+          <p className="mt-2 text-sm tracking-[0.24em] text-moss">Junior Ke Kaam, Kam Hai Daam.</p>
         </section>
 
-        <section className="mt-10 grid gap-8 rounded-[32px] bg-ink px-8 py-12 text-white shadow-card lg:grid-cols-[1.2fr_0.8fr]">
+        <section className="mt-6 grid gap-8 rounded-[32px] bg-ink px-8 py-12 text-white shadow-card lg:grid-cols-[1.2fr_0.8fr]">
           <div>
             <p className="text-sm tracking-[0.12em] text-gold">Student resale, but local.</p>
             <h2 className="mt-4 max-w-2xl font-display text-5xl leading-tight sm:text-6xl">
