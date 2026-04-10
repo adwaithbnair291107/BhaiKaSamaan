@@ -58,38 +58,30 @@ export default async function HomePage() {
         </section>
 
         <section className="mt-16">
-          <div className="flex items-end justify-between gap-6">
+          <div>
             <div>
-              <p className="text-sm uppercase tracking-[0.26em] text-moss">Core Categories</p>
-              <h2 className="mt-2 font-display text-4xl text-ink">Built for the things students actually use</h2>
+              <h2 className="font-display text-5xl text-ink sm:text-6xl">Categories</h2>
             </div>
-            <p className="max-w-lg text-sm text-ink/65">
-              Start with practical student resale categories instead of a generic all-purpose marketplace.
-            </p>
           </div>
 
-          <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-8 grid gap-5 md:grid-cols-2">
             {categories.map((category) => (
               <div
                 key={category}
                 className="rounded-[28px] border border-ink/10 bg-white p-6 shadow-card"
               >
                 <p className="text-sm uppercase tracking-[0.22em] text-moss">Category</p>
-                <h3 className="mt-3 text-xl font-semibold text-ink">{category}</h3>
+                <h3 className="mt-4 text-3xl font-semibold leading-tight text-ink">{category}</h3>
               </div>
             ))}
           </div>
         </section>
 
         <section id="colleges" className="mt-14">
-          <div className="flex items-end justify-between gap-6">
+          <div>
             <div>
-              <p className="text-sm uppercase tracking-[0.26em] text-moss">Choose Your College</p>
-              <h2 className="mt-2 font-display text-4xl text-ink">Launch as many mini markets as you want</h2>
+              <h2 className="font-display text-5xl text-ink sm:text-6xl">Colleges</h2>
             </div>
-            <p className="max-w-lg text-sm text-ink/65">
-              Each college gets its own local feed, but the platform stays centralized and easy to scale.
-            </p>
           </div>
 
           {colleges.length > 0 ? (
@@ -121,10 +113,9 @@ export default async function HomePage() {
         </section>
 
         <section className="mt-16">
-          <div className="flex items-end justify-between gap-6">
+          <div>
             <div>
-              <p className="text-sm uppercase tracking-[0.26em] text-moss">What Comes Next</p>
-              <h2 className="mt-2 font-display text-4xl text-ink">Live listings from your database</h2>
+              <h2 className="font-display text-5xl text-ink sm:text-6xl">Live Listings</h2>
             </div>
           </div>
 

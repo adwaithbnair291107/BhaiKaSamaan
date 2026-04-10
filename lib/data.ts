@@ -178,13 +178,15 @@ async function querySupabase<T>(path: string, init?: SupabaseRequestInit): Promi
     throw new Error("Supabase environment variables are missing.");
   }
 
+  const resolvedCache = init?.cache ?? (init?.next?.revalidate ? undefined : "no-store");
+
   const response = await fetch(`${config.url}/rest/v1/${path}`, {
     ...init,
     headers: {
       ...headers,
       ...(init?.headers ?? {})
     },
-    cache: init?.cache ?? "no-store",
+    cache: resolvedCache,
     next: init?.next
   });
 
