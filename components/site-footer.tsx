@@ -35,9 +35,9 @@ export async function SiteFooter() {
           <p className="mt-3 text-sm text-sky-100">Reach out for feedback, collaboration, or campus expansion.</p>
         </div>
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-start">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
           <div className="grid gap-6">
-            <div className="rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
+            <div className="min-h-[118px] rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
               <h3 className="font-display text-2xl">Adwaith B Nair</h3>
               <div className="mt-4 space-y-3 text-sm">
                 <p>
@@ -46,7 +46,7 @@ export async function SiteFooter() {
               </div>
             </div>
 
-            <div className="rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
+            <div className="min-h-[118px] rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
               <h3 className="font-display text-2xl">J M Kamalashewar</h3>
               <div className="mt-4 space-y-3 text-sm">
                 <p>
@@ -56,14 +56,14 @@ export async function SiteFooter() {
             </div>
           </div>
 
-          <div className="rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
+          <div className="flex h-full flex-col rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
             <p className="text-sm uppercase tracking-[0.22em] text-sky-100">Platform Stats</p>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-[24px] bg-white/10 px-5 py-4">
+            <div className="mt-5 grid flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="flex min-h-[118px] flex-col justify-between rounded-[24px] bg-white/10 px-5 py-4">
                 <p className="text-sm text-sky-100">Total Users</p>
                 <p className="mt-2 font-display text-4xl">{stats.totalUsers}</p>
               </div>
-              <div className="rounded-[24px] bg-white/10 px-5 py-4">
+              <div className="flex min-h-[118px] flex-col justify-between rounded-[24px] bg-white/10 px-5 py-4">
                 <p className="text-sm text-sky-100">Total Listings</p>
                 <p className="mt-2 font-display text-4xl">{stats.totalListings}</p>
               </div>
