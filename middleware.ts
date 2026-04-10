@@ -32,7 +32,13 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  const hasSupabaseAuthCookie = request.cookies
+    .getAll()
+    .some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
+
+  if (hasSupabaseAuthCookie) {
+    await supabase.auth.getUser();
+  }
 
   return response;
 }

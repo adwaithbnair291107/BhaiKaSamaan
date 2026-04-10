@@ -67,6 +67,12 @@ type CollegeRow = {
   description: string | null;
 };
 
+type ListingCollegeRelation = {
+  name: string;
+  city: string;
+  description?: string | null;
+} | null;
+
 type ListingRow = {
   id: string;
   user_id?: string | null;
@@ -84,6 +90,7 @@ type ListingRow = {
   description: string;
   image: string | null;
   created_at: string;
+  colleges?: ListingCollegeRelation | ListingCollegeRelation[];
 };
 
 type OfferRow = {
@@ -157,7 +164,13 @@ function createHeaders() {
   };
 }
 
-async function querySupabase<T>(path: string, init?: RequestInit): Promise<T> {
+type SupabaseRequestInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+  };
+};
+
+async function querySupabase<T>(path: string, init?: SupabaseRequestInit): Promise<T> {
   const config = getSupabaseConfig();
   const headers = createHeaders();
 
@@ -171,7 +184,8 @@ async function querySupabase<T>(path: string, init?: RequestInit): Promise<T> {
       ...headers,
       ...(init?.headers ?? {})
     },
-    cache: "no-store"
+    cache: init?.cache ?? "no-store",
+    next: init?.next
   });
 
   if (!response.ok) {
@@ -233,8 +247,13 @@ function parseListingImages(image: string | null) {
   return [image];
 }
 
-function mapListing(row: ListingRow, collegesBySlug: Map<string, CollegeRow>): Listing {
-  const college = collegesBySlug.get(row.college_slug);
+function getListingCollege(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>) {
+  const relationCollege = Array.isArray(row.colleges) ? row.colleges[0] ?? null : row.colleges ?? null;
+  return relationCollege ?? collegesBySlug?.get(row.college_slug) ?? null;
+}
+
+function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): Listing {
+  const college = getListingCollege(row, collegesBySlug);
   const images = parseListingImages(row.image);
 
   return {
@@ -266,8 +285,12 @@ export async function getColleges(): Promise<College[]> {
   }
 
   const [collegeRows, listingRows] = await Promise.all([
-    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description&order=name.asc"),
-    querySupabase<ListingRow[]>("listings?select=id,college_slug")
+    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description&order=name.asc", {
+      next: { revalidate: 60 }
+    }),
+    querySupabase<ListingRow[]>("listings?select=id,college_slug", {
+      next: { revalidate: 60 }
+    })
   ]);
 
   const counts = new Map<string, number>();
@@ -285,8 +308,38 @@ export async function getColleges(): Promise<College[]> {
 }
 
 export async function getCollege(slug: string): Promise<College | null> {
-  const colleges = await getColleges();
-  return colleges.find((college) => college.slug === slug) ?? null;
+  const config = getSupabaseConfig();
+  if (!config) {
+    return null;
+  }
+
+  const [collegeRows, listingRows] = await Promise.all([
+    querySupabase<CollegeRow[]>(
+      `colleges?select=slug,name,city,description&slug=eq.${encodeURIComponent(slug)}&limit=1`,
+      {
+        next: { revalidate: 60 }
+      }
+    ),
+    querySupabase<ListingRow[]>(
+      `listings?select=id&college_slug=eq.${encodeURIComponent(slug)}`,
+      {
+        next: { revalidate: 60 }
+      }
+    )
+  ]);
+
+  const college = collegeRows[0];
+  if (!college) {
+    return null;
+  }
+
+  return {
+    slug: college.slug,
+    name: college.name,
+    city: college.city,
+    description: college.description ?? "Local resale hub for this campus.",
+    activeListings: listingRows.length
+  };
 }
 
 function slugifyCollegeName(name: string) {
@@ -373,17 +426,16 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
     return [];
   }
 
-  const [collegeRows, listingRows] = await Promise.all([
-    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
-    querySupabase<ListingRow[]>(
-      `listings?select=*&college_slug=eq.${encodeURIComponent(
-        slug
-      )}&order=created_at.desc`
-    )
-  ]);
+  const listingRows = await querySupabase<ListingRow[]>(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&college_slug=eq.${encodeURIComponent(
+      slug
+    )}&order=created_at.desc`,
+    {
+      next: { revalidate: 60 }
+    }
+  );
 
-  const collegesBySlug = new Map(collegeRows.map((college) => [college.slug, college]));
-  return listingRows.map((listing) => mapListing(listing, collegesBySlug));
+  return listingRows.map((listing) => mapListing(listing));
 }
 
 export async function getListingsByUser(userId: string): Promise<Listing[]> {
@@ -392,15 +444,13 @@ export async function getListingsByUser(userId: string): Promise<Listing[]> {
     return [];
   }
 
-  const [collegeRows, listingRows] = await Promise.all([
-    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
-    querySupabase<ListingRow[]>(
-      `listings?select=*&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`
-    )
-  ]);
+  const listingRows = await querySupabase<ListingRow[]>(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&user_id=eq.${encodeURIComponent(
+      userId
+    )}&order=created_at.desc`
+  );
 
-  const collegesBySlug = new Map(collegeRows.map((college) => [college.slug, college]));
-  return listingRows.map((listing) => mapListing(listing, collegesBySlug));
+  return listingRows.map((listing) => mapListing(listing));
 }
 
 export async function getRecentListings(limit = 6): Promise<Listing[]> {
@@ -409,13 +459,14 @@ export async function getRecentListings(limit = 6): Promise<Listing[]> {
     return [];
   }
 
-  const [collegeRows, listingRows] = await Promise.all([
-    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
-    querySupabase<ListingRow[]>(`listings?select=*&order=created_at.desc&limit=${limit}`)
-  ]);
+  const listingRows = await querySupabase<ListingRow[]>(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&order=created_at.desc&limit=${limit}`,
+    {
+      next: { revalidate: 60 }
+    }
+  );
 
-  const collegesBySlug = new Map(collegeRows.map((college) => [college.slug, college]));
-  return listingRows.map((listing) => mapListing(listing, collegesBySlug));
+  return listingRows.map((listing) => mapListing(listing));
 }
 
 export async function getListing(id: string): Promise<Listing | null> {
@@ -424,22 +475,18 @@ export async function getListing(id: string): Promise<Listing | null> {
     return null;
   }
 
-  const [collegeRows, listingRows] = await Promise.all([
-    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
-    querySupabase<ListingRow[]>(
-      `listings?select=*&id=eq.${encodeURIComponent(
-        id
-      )}&limit=1`
-    )
-  ]);
+  const listingRows = await querySupabase<ListingRow[]>(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&id=eq.${encodeURIComponent(
+      id
+    )}&limit=1`
+  );
 
   const listing = listingRows[0];
   if (!listing) {
     return null;
   }
 
-  const collegesBySlug = new Map(collegeRows.map((college) => [college.slug, college]));
-  return mapListing(listing, collegesBySlug);
+  return mapListing(listing);
 }
 
 type CreateListingInput = {
