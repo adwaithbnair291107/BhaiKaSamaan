@@ -61,7 +61,10 @@ export function ListingDetailView({
           {isCompetitiveListing ? <p className="mt-2 text-sm text-ink/55">{COMPETITIVE_EXAMS_LABEL}</p> : null}
           <h1 className="mt-3 font-display text-4xl text-ink">{listing.title}</h1>
           <p className="mt-4 text-3xl font-semibold text-clay">Rs. {listing.expectedPrice}</p>
-          <p className="mt-2 text-sm text-ink/60">Buyer-facing price. Offers at or above the seller minimum start a chat with the seller.</p>
+          <p className="mt-2 text-sm text-ink/60">
+            This is the seller&apos;s expected price. Buyers can offer the price they feel is appropriate, and the seller
+            will receive the offer when it meets or exceeds the minimum price set by the seller.
+          </p>
 
           <div className="mt-6 flex flex-wrap gap-2 text-sm text-ink/75">
             <span className="rounded-full bg-mist px-4 py-2">
@@ -102,7 +105,10 @@ export function ListingDetailView({
           <p className="text-sm uppercase tracking-[0.26em] text-moss">Buyer Action</p>
           <h2 className="mt-3 font-display text-3xl text-ink">Connect or make an offer</h2>
           <p className="mt-3 text-sm leading-6 text-ink/68">
-            Leave the amount at the posted price if you want to buy at the listed price. If your offer is lower than the seller minimum, you will get an instant note instead of opening a chat.
+            The amount shown above is the seller&apos;s expected price, which is the public price buyers can see. You can
+            keep that same amount if you want to offer the full expected price, or enter a lower amount. If your offer
+            is below the seller&apos;s hidden minimum price, the chat will not open and you will get an instant low-offer
+            note instead.
           </p>
 
           {offerStatus === "sent" ? (
