@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { saveListingChanges, submitOffer } from "@/app/sell/actions";
 import { AuthButton } from "@/components/auth-button";
 import { SiteHeader } from "@/components/site-header";
-import { getListing } from "@/lib/data";
+import { COMPETITIVE_EXAMS_LABEL, COMPETITIVE_EXAMS_SLUG, getListing } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -31,7 +31,7 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
 
   const isDataUrl = listing.image.startsWith("data:");
   const listingPlace = listing.location || listing.city;
-  const isCompetitiveListing = listing.collegeSlug === "competitive-exams";
+  const isCompetitiveListing = listing.collegeSlug === COMPETITIVE_EXAMS_SLUG;
   const offerStatus = searchParams?.offer;
   const manageStatus = searchParams?.manage;
   const canManageListing = Boolean(user && listing.userId === user.id);
@@ -82,12 +82,17 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
 
           <div className="rounded-[32px] bg-white p-8 shadow-card">
             <p className="text-sm uppercase tracking-[0.26em] text-moss">{listing.category}</p>
+            {isCompetitiveListing ? (
+              <p className="mt-2 text-sm text-ink/55">{COMPETITIVE_EXAMS_LABEL}</p>
+            ) : null}
             <h1 className="mt-3 font-display text-4xl text-ink">{listing.title}</h1>
             <p className="mt-4 text-3xl font-semibold text-clay">Rs. {listing.expectedPrice}</p>
             <p className="mt-2 text-sm text-ink/60">Buyer-facing price. Offers at or above the seller minimum get forwarded.</p>
 
             <div className="mt-6 flex flex-wrap gap-2 text-sm text-ink/75">
-              <span className="rounded-full bg-mist px-4 py-2">{listing.collegeName}</span>
+              <span className="rounded-full bg-mist px-4 py-2">
+                {isCompetitiveListing ? COMPETITIVE_EXAMS_LABEL : listing.collegeName}
+              </span>
               {listing.branch ? <span className="rounded-full bg-mist px-4 py-2">{listing.branch}</span> : null}
               {listing.year ? <span className="rounded-full bg-mist px-4 py-2">{listing.year}</span> : null}
               <span className="rounded-full bg-mist px-4 py-2">{listing.condition}</span>
@@ -110,7 +115,10 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
 
             {canManageListing ? (
               <div className="mt-8 rounded-[24px] border border-moss/20 bg-moss/5 px-5 py-4 text-sm text-moss">
-                Seller access is enabled for this signed-in account. You can edit this listing below from any device.
+                <p>Seller access is enabled for this signed-in account. You can edit this listing below from any device.</p>
+                <a href="#seller-controls" className="mt-3 inline-flex rounded-full bg-moss px-4 py-2 font-semibold text-white transition hover:bg-ink">
+                  Jump to edit form
+                </a>
               </div>
             ) : null}
           </div>
@@ -243,7 +251,7 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         </section>
 
         {canManageListing ? (
-          <section className="mt-8 rounded-[32px] bg-white p-8 shadow-card">
+          <section id="seller-controls" className="mt-8 rounded-[32px] bg-white p-8 shadow-card">
             <p className="text-sm uppercase tracking-[0.26em] text-moss">Seller Controls</p>
             <h2 className="mt-3 font-display text-3xl text-ink">Edit your listing</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/68">
@@ -283,6 +291,12 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
             {manageStatus === "range" ? (
               <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
                 Expected price must be greater than or equal to minimum price.
+              </p>
+            ) : null}
+
+            {manageStatus === "error" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                We could not save the listing changes right now. Please try again.
               </p>
             ) : null}
 

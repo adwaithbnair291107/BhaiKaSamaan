@@ -11,123 +11,128 @@ function requireValue(formData: FormData, key: string) {
 }
 
 export async function submitListing(formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  try {
+    const supabase = createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/sell?status=auth");
-  }
-
-  const title = requireValue(formData, "title");
-  const collegeSlug = requireValue(formData, "collegeSlug");
-  const collegeName = requireValue(formData, "collegeName");
-  const collegeCity = requireValue(formData, "collegeCity");
-  const category = requireValue(formData, "category");
-  const examName = requireValue(formData, "examName");
-  const subcategory = requireValue(formData, "subcategory");
-  const location = requireValue(formData, "location");
-  const state = requireValue(formData, "state");
-  const district = requireValue(formData, "district");
-  const address = requireValue(formData, "address");
-  const postedBy = requireValue(formData, "postedBy");
-  const description = requireValue(formData, "description");
-  const expectedPriceValue = requireValue(formData, "expectedPrice");
-  const minPriceValue = requireValue(formData, "minPrice");
-  const isCompetitiveCategory = category === "Competitive Exam Books";
-  const isCollegeAccessoriesCategory = category === "College Accessories";
-  const competitiveLocation = [address, district, state].filter(Boolean).join(", ");
-
-  if (!title || !category || !postedBy || !description || !expectedPriceValue || !minPriceValue) {
-    redirect("/sell?status=missing");
-  }
-
-  if (isCollegeAccessoriesCategory && !subcategory) {
-    redirect("/sell?status=missing");
-  }
-
-  if (!isCompetitiveCategory && (!collegeName || !collegeCity)) {
-    redirect("/sell?status=missing");
-  }
-
-  if (isCompetitiveCategory && !examName) {
-    redirect("/sell?status=missing");
-  }
-
-  if (isCompetitiveCategory && (!state || !district || !address)) {
-    redirect("/sell?status=location");
-  }
-
-  const expectedPrice = Number(expectedPriceValue);
-  const minPrice = Number(minPriceValue);
-  if (Number.isNaN(expectedPrice) || Number.isNaN(minPrice) || expectedPrice <= 0 || minPrice <= 0) {
-    redirect("/sell?status=price");
-  }
-
-  if (expectedPrice < minPrice) {
-    redirect("/sell?status=price-range");
-  }
-
-  const imageFiles = formData.getAll("imageFiles");
-  const images: string[] = [];
-  let totalImageBytes = 0;
-
-  if (imageFiles.length > 3) {
-    redirect("/sell?status=image-count");
-  }
-
-  for (const imageFile of imageFiles) {
-    if (!(imageFile instanceof File) || imageFile.size === 0) {
-      continue;
+    if (!user) {
+      redirect("/sell?status=auth");
     }
 
-    if (imageFile.size > 2 * 1024 * 1024) {
-      redirect("/sell?status=image-size");
+    const title = requireValue(formData, "title");
+    const collegeSlug = requireValue(formData, "collegeSlug");
+    const collegeName = requireValue(formData, "collegeName");
+    const collegeCity = requireValue(formData, "collegeCity");
+    const category = requireValue(formData, "category");
+    const examName = requireValue(formData, "examName");
+    const subcategory = requireValue(formData, "subcategory");
+    const location = requireValue(formData, "location");
+    const state = requireValue(formData, "state");
+    const district = requireValue(formData, "district");
+    const address = requireValue(formData, "address");
+    const postedBy = requireValue(formData, "postedBy");
+    const description = requireValue(formData, "description");
+    const expectedPriceValue = requireValue(formData, "expectedPrice");
+    const minPriceValue = requireValue(formData, "minPrice");
+    const isCompetitiveCategory = category === "Competitive Exam Books";
+    const isCollegeAccessoriesCategory = category === "College Accessories";
+    const competitiveLocation = [address, district, state].filter(Boolean).join(", ");
+
+    if (!title || !category || !postedBy || !description || !expectedPriceValue || !minPriceValue) {
+      redirect("/sell?status=missing");
     }
 
-    totalImageBytes += imageFile.size;
-    if (totalImageBytes > 6 * 1024 * 1024) {
-      redirect("/sell?status=image-total-size");
+    if (isCollegeAccessoriesCategory && !subcategory) {
+      redirect("/sell?status=missing");
     }
 
-    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-    if (!allowedTypes.has(imageFile.type)) {
-      redirect("/sell?status=image-type");
+    if (!isCompetitiveCategory && (!collegeName || !collegeCity)) {
+      redirect("/sell?status=missing");
     }
 
-    const bytes = await imageFile.arrayBuffer();
-    images.push(`data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`);
+    if (isCompetitiveCategory && !examName) {
+      redirect("/sell?status=missing");
+    }
+
+    if (isCompetitiveCategory && (!state || !district || !address)) {
+      redirect("/sell?status=location");
+    }
+
+    const expectedPrice = Number(expectedPriceValue);
+    const minPrice = Number(minPriceValue);
+    if (Number.isNaN(expectedPrice) || Number.isNaN(minPrice) || expectedPrice <= 0 || minPrice <= 0) {
+      redirect("/sell?status=price");
+    }
+
+    if (expectedPrice < minPrice) {
+      redirect("/sell?status=price-range");
+    }
+
+    const imageFiles = formData.getAll("imageFiles");
+    const images: string[] = [];
+    let totalImageBytes = 0;
+
+    if (imageFiles.length > 3) {
+      redirect("/sell?status=image-count");
+    }
+
+    for (const imageFile of imageFiles) {
+      if (!(imageFile instanceof File) || imageFile.size === 0) {
+        continue;
+      }
+
+      if (imageFile.size > 2 * 1024 * 1024) {
+        redirect("/sell?status=image-size");
+      }
+
+      totalImageBytes += imageFile.size;
+      if (totalImageBytes > 6 * 1024 * 1024) {
+        redirect("/sell?status=image-total-size");
+      }
+
+      const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+      if (!allowedTypes.has(imageFile.type)) {
+        redirect("/sell?status=image-type");
+      }
+
+      const bytes = await imageFile.arrayBuffer();
+      images.push(`data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`);
+    }
+
+    const resolvedCollege = collegeSlug
+      ? { slug: collegeSlug }
+      : await ensureCollegeByName(
+          isCompetitiveCategory ? "Competitive Exams" : collegeName,
+          isCompetitiveCategory ? district || state : collegeCity
+        );
+
+    const storedCategory = isCompetitiveCategory ? examName : isCollegeAccessoriesCategory ? subcategory : category;
+
+    const listingId = await createListing({
+      title,
+      userId: user.id,
+      collegeSlug: resolvedCollege.slug,
+      category: storedCategory,
+      minPrice,
+      expectedPrice,
+      postedBy,
+      description,
+      branch: requireValue(formData, "branch") || undefined,
+      year: requireValue(formData, "year") || undefined,
+      condition: requireValue(formData, "condition") || undefined,
+      location: isCompetitiveCategory ? competitiveLocation : location || undefined,
+      images
+    });
+
+    revalidatePath("/");
+    revalidatePath(`/college/${resolvedCollege.slug}`);
+    redirect(`/listings/${listingId}`);
+  } catch (error) {
+    console.error("Failed to submit listing", error);
+    redirect("/sell?status=error");
   }
-
-  const resolvedCollege = collegeSlug
-    ? { slug: collegeSlug }
-    : await ensureCollegeByName(
-        isCompetitiveCategory ? "Competitive Exams" : collegeName,
-        isCompetitiveCategory ? district || state : collegeCity
-      );
-
-  const storedCategory = isCompetitiveCategory ? examName : isCollegeAccessoriesCategory ? subcategory : category;
-
-  const listingId = await createListing({
-    title,
-    userId: user.id,
-    collegeSlug: resolvedCollege.slug,
-    category: storedCategory,
-    minPrice,
-    expectedPrice,
-    postedBy,
-    description,
-    branch: requireValue(formData, "branch") || undefined,
-    year: requireValue(formData, "year") || undefined,
-    condition: requireValue(formData, "condition") || undefined,
-    location: isCompetitiveCategory ? competitiveLocation : location || undefined,
-    images
-  });
-
-  revalidatePath("/");
-  revalidatePath(`/college/${resolvedCollege.slug}`);
-  redirect(`/listings/${listingId}`);
 }
 
 export async function submitOffer(formData: FormData) {
@@ -177,60 +182,66 @@ export async function submitOffer(formData: FormData) {
 }
 
 export async function saveListingChanges(formData: FormData) {
-  const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
   const listingId = requireValue(formData, "listingId");
-  const title = requireValue(formData, "title");
-  const postedBy = requireValue(formData, "postedBy");
-  const description = requireValue(formData, "description");
-  const expectedPriceValue = requireValue(formData, "expectedPrice");
-  const minPriceValue = requireValue(formData, "minPrice");
-  const condition = requireValue(formData, "condition");
-  const location = requireValue(formData, "location");
 
-  if (!listingId) {
-    redirect("/");
+  try {
+    const supabase = createClient();
+    const {
+      data: { user }
+    } = await supabase.auth.getUser();
+
+    const title = requireValue(formData, "title");
+    const postedBy = requireValue(formData, "postedBy");
+    const description = requireValue(formData, "description");
+    const expectedPriceValue = requireValue(formData, "expectedPrice");
+    const minPriceValue = requireValue(formData, "minPrice");
+    const condition = requireValue(formData, "condition");
+    const location = requireValue(formData, "location");
+
+    if (!listingId) {
+      redirect("/");
+    }
+
+    if (!user) {
+      redirect(`/listings/${listingId}?manage=auth`);
+    }
+
+    const listing = await getListing(listingId);
+    if (!listing || listing.userId !== user.id) {
+      redirect(`/listings/${listingId}?manage=denied`);
+    }
+
+    if (!title || !postedBy || !description || !expectedPriceValue || !minPriceValue || !condition) {
+      redirect(`/listings/${listingId}?manage=missing`);
+    }
+
+    const expectedPrice = Number(expectedPriceValue);
+    const minPrice = Number(minPriceValue);
+    if (Number.isNaN(expectedPrice) || Number.isNaN(minPrice) || expectedPrice <= 0 || minPrice <= 0) {
+      redirect(`/listings/${listingId}?manage=price`);
+    }
+
+    if (expectedPrice < minPrice) {
+      redirect(`/listings/${listingId}?manage=range`);
+    }
+
+    await updateListing({
+      id: listingId,
+      userId: user.id,
+      title,
+      postedBy,
+      description,
+      minPrice,
+      expectedPrice,
+      condition,
+      location
+    });
+
+    revalidatePath("/");
+    revalidatePath(`/listings/${listingId}`);
+    redirect(`/listings/${listingId}?manage=saved`);
+  } catch (error) {
+    console.error("Failed to save listing changes", error);
+    redirect(`/listings/${listingId}?manage=error`);
   }
-
-  if (!user) {
-    redirect(`/listings/${listingId}?manage=auth`);
-  }
-
-  const listing = await getListing(listingId);
-  if (!listing || listing.userId !== user.id) {
-    redirect(`/listings/${listingId}?manage=denied`);
-  }
-
-  if (!title || !postedBy || !description || !expectedPriceValue || !minPriceValue || !condition) {
-    redirect(`/listings/${listingId}?manage=missing`);
-  }
-
-  const expectedPrice = Number(expectedPriceValue);
-  const minPrice = Number(minPriceValue);
-  if (Number.isNaN(expectedPrice) || Number.isNaN(minPrice) || expectedPrice <= 0 || minPrice <= 0) {
-    redirect(`/listings/${listingId}?manage=price`);
-  }
-
-  if (expectedPrice < minPrice) {
-    redirect(`/listings/${listingId}?manage=range`);
-  }
-
-  await updateListing({
-    id: listingId,
-    userId: user.id,
-    title,
-    postedBy,
-    description,
-    minPrice,
-    expectedPrice,
-    condition,
-    location
-  });
-
-  revalidatePath("/");
-  revalidatePath(`/listings/${listingId}`);
-  redirect(`/listings/${listingId}?manage=saved`);
 }

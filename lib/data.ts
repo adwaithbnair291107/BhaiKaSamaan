@@ -42,6 +42,9 @@ export type College = {
   description: string;
 };
 
+export const COMPETITIVE_EXAMS_SLUG = "competitive-exams";
+export const COMPETITIVE_EXAMS_LABEL = "Competitive Exams";
+
 type CollegeRow = {
   slug: string;
   name: string;
@@ -252,7 +255,7 @@ export async function getColleges(): Promise<College[]> {
     city: college.city,
     description: college.description ?? "Local resale hub for this campus.",
     activeListings: counts.get(college.slug) ?? 0
-  }));
+  })).filter((college) => college.slug !== COMPETITIVE_EXAMS_SLUG);
 }
 
 export async function getCollege(slug: string): Promise<College | null> {
@@ -350,6 +353,23 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
       `listings?select=*&college_slug=eq.${encodeURIComponent(
         slug
       )}&order=created_at.desc`
+    )
+  ]);
+
+  const collegesBySlug = new Map(collegeRows.map((college) => [college.slug, college]));
+  return listingRows.map((listing) => mapListing(listing, collegesBySlug));
+}
+
+export async function getListingsByUser(userId: string): Promise<Listing[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  const [collegeRows, listingRows] = await Promise.all([
+    querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description"),
+    querySupabase<ListingRow[]>(
+      `listings?select=*&user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc`
     )
   ]);
 
