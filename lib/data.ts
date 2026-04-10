@@ -488,9 +488,10 @@ export async function getListingsByCategoryBrowse(
   const serializedCategories = allowedSubdivisions
     .map((item) => `"${item.replace(/"/g, '\\"')}"`)
     .join(",");
+  const encodedCategoryFilter = encodeURIComponent(`(${serializedCategories})`);
 
   const listingRows = await querySupabase<ListingRow[]>(
-    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&category=in.(${serializedCategories})&order=created_at.desc`,
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&category=in.${encodedCategoryFilter}&order=created_at.desc`,
     {
       next: { revalidate: 60 }
     }
