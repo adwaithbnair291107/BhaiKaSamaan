@@ -11,6 +11,7 @@ type AuthButtonProps = {
 export function AuthButton({ isSignedIn, userLabel }: AuthButtonProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const badgeLabel = (userLabel?.trim().charAt(0) || "U").toUpperCase();
 
   async function handleGoogleSignIn() {
     const supabase = createClient();
@@ -31,7 +32,13 @@ export function AuthButton({ isSignedIn, userLabel }: AuthButtonProps) {
   if (isSignedIn) {
     return (
       <div className="flex items-center gap-3">
-        <span className="hidden text-sm text-ink/60 sm:inline">{userLabel}</span>
+        <span
+          title={userLabel}
+          aria-label={userLabel}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-mist text-sm font-semibold text-ink"
+        >
+          {badgeLabel}
+        </span>
         <button
           type="button"
           onClick={handleSignOut}
