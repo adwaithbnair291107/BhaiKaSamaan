@@ -38,6 +38,12 @@ export default async function SellPage({ searchParams }: SellPageProps) {
             </p>
           ) : null}
 
+          {status === "location" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please enter a location for competitive exam listings.
+            </p>
+          ) : null}
+
           {status === "image-size" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               Please upload an image smaller than 2 MB.

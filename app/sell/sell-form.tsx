@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useEffect, useId, useState } from "react";
-import type { College } from "@/lib/data";
+import { collegeAccessorySubcategories, competitiveExamNames, type College } from "@/lib/data";
 
 type SellFormProps = {
   colleges: College[];
@@ -11,7 +11,11 @@ type SellFormProps = {
 
 export function SellForm({ colleges, categories, action }: SellFormProps) {
   const datalistId = useId();
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [selectedExamName, setSelectedExamName] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
   const [collegeQuery, setCollegeQuery] = useState("");
+  const [collegeCity, setCollegeCity] = useState("");
   const deferredCollegeQuery = useDeferredValue(collegeQuery);
   const [selectedCollegeSlug, setSelectedCollegeSlug] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -21,6 +25,8 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
   const fieldClassName =
     "w-full rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] text-ink shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10";
   const helperClassName = "text-xs leading-5 text-ink/55";
+  const isCompetitiveCategory = selectedCategory === "Competitive Exam Books";
+  const isCollegeAccessoriesCategory = selectedCategory === "College Accessories";
 
   const normalizedQuery = deferredCollegeQuery.trim().toLowerCase();
   const matchingColleges = normalizedQuery
@@ -59,7 +65,9 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
   }
 
   function selectCollege(name: string, slug: string) {
+    const matchedCollege = colleges.find((college) => college.slug === slug);
     setCollegeQuery(name);
+    setCollegeCity(matchedCollege?.city ?? "");
     setSelectedCollegeSlug(slug);
     setIsCollegeMenuOpen(false);
   }
@@ -91,17 +99,74 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
 
       <section className="rounded-[28px] border border-ink/10 bg-white p-5 shadow-[0_18px_50px_rgba(26,35,32,0.06)]">
         <div className="mb-5">
-          <p className="text-xs uppercase tracking-[0.24em] text-moss">Campus Match</p>
-          <h3 className="mt-2 text-2xl font-semibold text-ink">Tell us where this belongs</h3>
+          <p className="text-xs uppercase tracking-[0.24em] text-moss">Listing Type</p>
+          <h3 className="mt-2 text-2xl font-semibold text-ink">Start with the category</h3>
+        </div>
+
+        <div className="grid gap-3">
+          <label className="grid gap-3 text-sm font-medium text-ink">
+            <span className="text-[0.95rem] font-semibold">Category</span>
+            <select
+              name="category"
+              required
+              className={fieldClassName}
+              defaultValue=""
+              onChange={(event) => {
+                setSelectedCategory(event.target.value);
+                setSelectedExamName("");
+                setSelectedSubcategory("");
+              }}
+            >
+              <option value="" disabled>
+                Select a category
+              </option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <p className={helperClassName}>
+            {isCompetitiveCategory
+              ? "Competitive exam posts like JEE do not need a college. Add the location where buyers can find it."
+              : isCollegeAccessoriesCategory
+                ? "Choose the college first, then select the exact subdivision inside college accessories."
+                : "For campus-specific items, choose the college this post belongs to."}
+          </p>
+        </div>
+      </section>
+
+      <section className="rounded-[28px] border border-ink/10 bg-white p-5 shadow-[0_18px_50px_rgba(26,35,32,0.06)]">
+        <div className="mb-5">
+          <p className="text-xs uppercase tracking-[0.24em] text-moss">
+            {isCompetitiveCategory ? "Location Match" : "Campus Match"}
+          </p>
+          <h3 className="mt-2 text-2xl font-semibold text-ink">
+            {isCompetitiveCategory ? "Tell us where this is available" : "Tell us where this belongs"}
+          </h3>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
+          {isCompetitiveCategory ? (
+            <label className="grid gap-3 text-sm font-medium text-ink md:col-span-2">
+              <span className="text-[0.95rem] font-semibold">Location</span>
+              <input
+                name="location"
+                required={isCompetitiveCategory}
+                className={fieldClassName}
+                placeholder="Jalandhar / Delhi / Kota / Online handoff"
+              />
+            </label>
+          ) : (
+            <>
           <label className="grid gap-3 text-sm font-medium text-ink">
             <span className="text-[0.95rem] font-semibold">College</span>
             <div className="relative">
               <input
                 name="collegeName"
-                required
+                required={!isCompetitiveCategory}
                 list={datalistId}
                 value={collegeQuery}
                 onFocus={() => setIsCollegeMenuOpen(true)}
@@ -135,21 +200,21 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
                 </div>
               ) : null}
             </div>
-        </label>
+          </label>
 
           <label className="grid gap-3 text-sm font-medium text-ink">
-            <span className="text-[0.95rem] font-semibold">Category</span>
-            <select name="category" required className={fieldClassName} defaultValue="">
-              <option value="" disabled>
-                Select a category
-              </option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <span className="text-[0.95rem] font-semibold">College City</span>
+            <input
+              name="collegeCity"
+              required={!isCompetitiveCategory}
+              value={collegeCity}
+              onChange={(event) => setCollegeCity(event.target.value)}
+              className={fieldClassName}
+              placeholder="Type your college city"
+            />
           </label>
+            </>
+          )}
         </div>
       </section>
 
@@ -158,6 +223,54 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
           <p className="text-xs uppercase tracking-[0.24em] text-moss">Listing Details</p>
           <h3 className="mt-2 text-2xl font-semibold text-ink">Make the post easy to trust</h3>
         </div>
+
+        {isCompetitiveCategory ? (
+          <div className="mb-6">
+            <label className="grid gap-3 text-sm font-medium text-ink">
+              <span className="text-[0.95rem] font-semibold">Exam Name</span>
+              <select
+                name="examName"
+                required={isCompetitiveCategory}
+                className={fieldClassName}
+                value={selectedExamName}
+                onChange={(event) => setSelectedExamName(event.target.value)}
+              >
+                <option value="" disabled>
+                  Select an exam
+                </option>
+                {competitiveExamNames.map((examName) => (
+                  <option key={examName} value={examName}>
+                    {examName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
+
+        {isCollegeAccessoriesCategory ? (
+          <div className="mb-6">
+            <label className="grid gap-3 text-sm font-medium text-ink">
+              <span className="text-[0.95rem] font-semibold">Subdivision</span>
+              <select
+                name="subcategory"
+                required={isCollegeAccessoriesCategory}
+                className={fieldClassName}
+                value={selectedSubcategory}
+                onChange={(event) => setSelectedSubcategory(event.target.value)}
+              >
+                <option value="" disabled>
+                  Select a subdivision
+                </option>
+                {collegeAccessorySubcategories.map((subcategory) => (
+                  <option key={subcategory} value={subcategory}>
+                    {subcategory}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : null}
 
         <div className="grid gap-6 md:grid-cols-2">
           <label className="grid gap-3 text-sm font-medium text-ink">
@@ -183,17 +296,19 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
           </label>
         </div>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <label className="grid gap-3 text-sm font-medium text-ink">
-            <span className="text-[0.95rem] font-semibold">Branch</span>
-            <input name="branch" className={fieldClassName} placeholder="CSE / Mechanical / JEE / NEET" />
-          </label>
+        {!isCompetitiveCategory ? (
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            <label className="grid gap-3 text-sm font-medium text-ink">
+              <span className="text-[0.95rem] font-semibold">Branch</span>
+              <input name="branch" className={fieldClassName} placeholder="CSE / Mechanical / ECE" />
+            </label>
 
-          <label className="grid gap-3 text-sm font-medium text-ink">
-            <span className="text-[0.95rem] font-semibold">Year or Program</span>
-            <input name="year" className={fieldClassName} placeholder="1st year / Dropper" />
-          </label>
-        </div>
+            <label className="grid gap-3 text-sm font-medium text-ink">
+              <span className="text-[0.95rem] font-semibold">Year or Program</span>
+              <input name="year" className={fieldClassName} placeholder="1st year / 2nd year / Final year" />
+            </label>
+          </div>
+        ) : null}
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <label className="grid gap-3 text-sm font-medium text-ink">
@@ -206,12 +321,23 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
             />
           </label>
 
-          <div className="grid gap-3 text-sm font-medium text-ink">
-            <span className="text-[0.95rem] font-semibold">College City</span>
-            <div className="rounded-[22px] border border-dashed border-ink/15 bg-[#f7f1e3] px-5 py-4 text-[15px] text-ink/65">
-              Pulled automatically from the selected college
+          {!isCompetitiveCategory ? (
+            <label className="grid gap-3 text-sm font-medium text-ink">
+              <span className="text-[0.95rem] font-semibold">Pickup Location</span>
+              <input
+                name="location"
+                className={fieldClassName}
+                placeholder="Main gate / Hostel block / Library canteen"
+              />
+            </label>
+          ) : (
+            <div className="grid gap-3 text-sm font-medium text-ink">
+              <span className="text-[0.95rem] font-semibold">College</span>
+              <div className="rounded-[22px] border border-dashed border-ink/15 bg-[#f7f1e3] px-5 py-4 text-[15px] text-ink/65">
+                Not required for competitive exam listings
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="mt-6 grid gap-6 md:grid-cols-2">
@@ -272,11 +398,6 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
             placeholder="Mention condition, edition, included extras, and pickup area."
           />
         </label>
-
-        <div className="mt-6 rounded-[28px] border border-dashed border-ink/15 bg-[#f7f1e3] p-6 text-sm leading-6 text-ink/65">
-          Images are uploaded from the device for this MVP and stored with the listing. We can switch
-          to Supabase Storage later for better scaling.
-        </div>
       </section>
 
       <button

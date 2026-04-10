@@ -4,6 +4,7 @@ import type { Listing } from "@/lib/data";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const isDataUrl = listing.image.startsWith("data:");
+  const listingPlace = listing.location || listing.city;
 
   return (
     <Link
@@ -32,7 +33,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </div>
 
         <div className="flex items-center justify-between text-sm text-ink/60">
-          <span>{listing.city}</span>
+          <span>{listingPlace}</span>
           <span>{listing.postedAgo}</span>
         </div>
       </div>

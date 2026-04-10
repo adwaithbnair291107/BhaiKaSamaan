@@ -18,15 +18,23 @@ export default async function ListingDetailPage({ params }: PageProps) {
   }
 
   const isDataUrl = listing.image.startsWith("data:");
+  const listingPlace = listing.location || listing.city;
+  const isCompetitiveListing = listing.category === "Exam Books (Competitive)";
 
   return (
     <div className="min-h-screen">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <Link href={`/college/${listing.collegeSlug}`} className="text-sm font-semibold text-moss hover:text-ink">
-          {`<- Back to ${listing.collegeName}`}
-        </Link>
+        {isCompetitiveListing ? (
+          <Link href="/" className="text-sm font-semibold text-moss hover:text-ink">
+            {"<- Back to explore"}
+          </Link>
+        ) : (
+          <Link href={`/college/${listing.collegeSlug}`} className="text-sm font-semibold text-moss hover:text-ink">
+            {`<- Back to ${listing.collegeName}`}
+          </Link>
+        )}
 
         <section className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="relative min-h-[340px] overflow-hidden rounded-[32px] bg-white shadow-card">
@@ -53,7 +61,10 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
             <div className="mt-8 space-y-4 text-sm text-ink/72">
               <p>
-                <span className="font-semibold text-ink">City:</span> {listing.city}
+                <span className="font-semibold text-ink">
+                  {listing.location ? "Location:" : "City:"}
+                </span>{" "}
+                {listingPlace}
               </p>
               <p>
                 <span className="font-semibold text-ink">Seller:</span> {listing.postedBy}

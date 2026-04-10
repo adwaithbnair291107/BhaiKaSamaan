@@ -12,6 +12,7 @@ export type Listing = {
   condition: string;
   price: number;
   city: string;
+  location?: string | null;
   postedBy: string;
   postedAgo: string;
   description: string;
@@ -48,9 +49,24 @@ type ListingRow = {
   image: string | null;
   created_at: string;
 };
-export const categories = [
+export const categories = ["Competitive Exam Books", "College Accessories"];
+
+export const competitiveExamNames = [
+  "JEE",
+  "NEET",
+  "NDA",
+  "CUET",
+  "CAT",
+  "GATE",
+  "UPSC",
+  "SSC",
+  "Bank Exams",
+  "Railway Exams",
+  "Other"
+];
+
+export const collegeAccessorySubcategories = [
   "College Books",
-  "Exam Books (Competitive)",
   "Notes & Printed Material",
   "Study Tools & Stationery",
   "College Accessories",
@@ -153,6 +169,7 @@ function mapListing(row: ListingRow, collegesBySlug: Map<string, CollegeRow>): L
     condition: row.condition,
     price: Number(row.price),
     city: college?.city ?? "Unknown City",
+    location: row.location,
     postedBy: row.posted_by,
     postedAgo: formatPostedAgo(row.created_at),
     description: row.description,
@@ -321,6 +338,7 @@ type CreateListingInput = {
   description: string;
   postedBy: string;
   condition?: string;
+  location?: string;
   image?: string;
 };
 
@@ -339,7 +357,7 @@ export async function createListing(input: CreateListingInput): Promise<string> 
         category: input.category,
         condition: input.condition || "Good",
         price: input.price,
-        location: null,
+        location: input.location || null,
         posted_by: input.postedBy,
         description: input.description,
         image: input.image || null

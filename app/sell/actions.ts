@@ -13,13 +13,35 @@ export async function submitListing(formData: FormData) {
   const title = requireValue(formData, "title");
   const collegeSlug = requireValue(formData, "collegeSlug");
   const collegeName = requireValue(formData, "collegeName");
+  const collegeCity = requireValue(formData, "collegeCity");
   const category = requireValue(formData, "category");
+  const examName = requireValue(formData, "examName");
+  const subcategory = requireValue(formData, "subcategory");
+  const location = requireValue(formData, "location");
   const postedBy = requireValue(formData, "postedBy");
   const description = requireValue(formData, "description");
   const priceValue = requireValue(formData, "price");
+  const isCompetitiveCategory = category === "Competitive Exam Books";
+  const isCollegeAccessoriesCategory = category === "College Accessories";
 
-  if (!title || !collegeName || !category || !postedBy || !description || !priceValue) {
+  if (!title || !category || !postedBy || !description || !priceValue) {
     redirect("/sell?status=missing");
+  }
+
+  if (isCollegeAccessoriesCategory && !subcategory) {
+    redirect("/sell?status=missing");
+  }
+
+  if (!isCompetitiveCategory && (!collegeName || !collegeCity)) {
+    redirect("/sell?status=missing");
+  }
+
+  if (isCompetitiveCategory && !examName) {
+    redirect("/sell?status=missing");
+  }
+
+  if (isCompetitiveCategory && !location) {
+    redirect("/sell?status=location");
   }
 
   const price = Number(priceValue);
@@ -46,18 +68,24 @@ export async function submitListing(formData: FormData) {
 
   const resolvedCollege = collegeSlug
     ? { slug: collegeSlug }
-    : await ensureCollegeByName(collegeName);
+    : await ensureCollegeByName(
+        isCompetitiveCategory ? "Competitive Exams" : collegeName,
+        isCompetitiveCategory ? location : collegeCity
+      );
+
+  const storedCategory = isCompetitiveCategory ? examName : isCollegeAccessoriesCategory ? subcategory : category;
 
   const listingId = await createListing({
     title,
     collegeSlug: resolvedCollege.slug,
-    category,
+    category: storedCategory,
     price,
     postedBy,
     description,
     branch: requireValue(formData, "branch") || undefined,
     year: requireValue(formData, "year") || undefined,
     condition: requireValue(formData, "condition") || undefined,
+    location: location || undefined,
     image
   });
 
