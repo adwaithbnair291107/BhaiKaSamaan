@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ListingCard } from "@/components/listing-card";
 import { SiteHeader } from "@/components/site-header";
-import { categories, getColleges, getRecentListings } from "@/lib/data";
+import { categoryBrowseConfig, getColleges, getRecentListings } from "@/lib/data";
 
 export default async function HomePage() {
   const [colleges, recentListings] = await Promise.all([getColleges(), getRecentListings()]);
@@ -65,14 +65,15 @@ export default async function HomePage() {
           </div>
 
           <div className="mt-8 grid gap-5 md:grid-cols-2">
-            {categories.map((category) => (
-              <div
-                key={category}
+            {Object.entries(categoryBrowseConfig).map(([slug, category]) => (
+              <Link
+                key={slug}
+                href={`/category/${slug}`}
                 className="rounded-[28px] border border-ink/10 bg-white p-6 shadow-card"
               >
                 <p className="text-sm uppercase tracking-[0.22em] text-moss">Category</p>
-                <h3 className="mt-4 text-3xl font-semibold leading-tight text-ink">{category}</h3>
-              </div>
+                <h3 className="mt-4 text-3xl font-semibold leading-tight text-ink">{category.label}</h3>
+              </Link>
             ))}
           </div>
         </section>

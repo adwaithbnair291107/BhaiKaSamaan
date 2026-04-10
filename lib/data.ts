@@ -139,6 +139,21 @@ export const collegeAccessorySubcategories = [
   "Electronics & Gadgets",
   "Lab & Project Items"
 ];
+
+export const categoryBrowseConfig = {
+  "competitive-exam-books": {
+    label: "Competitive Exam Books",
+    description: "Browse by exam first, then open the exact books and bundles you want.",
+    subdivisions: competitiveExamNames
+  },
+  "college-accessories": {
+    label: "College Accessories",
+    description: "Open the exact campus subdivision first, then browse the relevant products inside it.",
+    subdivisions: collegeAccessorySubcategories
+  }
+} as const;
+
+export type CategoryBrowseSlug = keyof typeof categoryBrowseConfig;
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -254,6 +269,14 @@ function getListingCollege(row: ListingRow, collegesBySlug?: Map<string, College
   return relationCollege ?? collegesBySlug?.get(row.college_slug) ?? null;
 }
 
+function isCompetitiveListingCategory(category: string) {
+  return competitiveExamNames.includes(category);
+}
+
+function isCollegeListingVisibleForCollegeFeed(row: ListingRow) {
+  return !isCompetitiveListingCategory(row.category);
+}
+
 function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): Listing {
   const college = getListingCollege(row, collegesBySlug);
   const images = parseListingImages(row.image);
@@ -297,6 +320,10 @@ export async function getColleges(): Promise<College[]> {
 
   const counts = new Map<string, number>();
   for (const listing of listingRows) {
+    if (!isCollegeListingVisibleForCollegeFeed(listing)) {
+      continue;
+    }
+
     counts.set(listing.college_slug, (counts.get(listing.college_slug) ?? 0) + 1);
   }
 
@@ -340,7 +367,7 @@ export async function getCollege(slug: string): Promise<College | null> {
     name: college.name,
     city: college.city,
     description: college.description ?? "Local resale hub for this campus.",
-    activeListings: listingRows.length
+    activeListings: listingRows.filter(isCollegeListingVisibleForCollegeFeed).length
   };
 }
 
@@ -432,6 +459,38 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
     `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&college_slug=eq.${encodeURIComponent(
       slug
     )}&order=created_at.desc`,
+    {
+      next: { revalidate: 60 }
+    }
+  );
+
+  return listingRows.filter(isCollegeListingVisibleForCollegeFeed).map((listing) => mapListing(listing));
+}
+
+export async function getListingsByCategoryBrowse(
+  slug: CategoryBrowseSlug,
+  subdivision?: string
+): Promise<Listing[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  const categoryConfig = categoryBrowseConfig[slug];
+  const allowedSubdivisions = subdivision
+    ? categoryConfig.subdivisions.filter((item) => item === subdivision)
+    : categoryConfig.subdivisions;
+
+  if (allowedSubdivisions.length === 0) {
+    return [];
+  }
+
+  const serializedCategories = allowedSubdivisions
+    .map((item) => `"${item.replace(/"/g, '\\"')}"`)
+    .join(",");
+
+  const listingRows = await querySupabase<ListingRow[]>(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&category=in.(${serializedCategories})&order=created_at.desc`,
     {
       next: { revalidate: 60 }
     }

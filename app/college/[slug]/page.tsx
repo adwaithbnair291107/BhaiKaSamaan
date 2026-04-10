@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ListingCard } from "@/components/listing-card";
 import { SiteHeader } from "@/components/site-header";
-import { categories, getCollege, getListingsByCollege } from "@/lib/data";
+import { categoryBrowseConfig, getCollege, getListingsByCollege } from "@/lib/data";
 
 type PageProps = {
   params: {
@@ -45,13 +45,14 @@ export default async function CollegePage({ params }: PageProps) {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            {categories.map((category) => (
-              <span
-                key={category}
-                className="rounded-full border border-ink/10 bg-mist px-4 py-2 text-sm text-ink/75"
+            {Object.entries(categoryBrowseConfig).map(([slug, category]) => (
+              <Link
+                key={slug}
+                href={`/category/${slug}`}
+                className="rounded-full border border-ink/10 bg-mist px-4 py-2 text-sm text-ink/75 transition hover:border-moss hover:text-ink"
               >
-                {category}
-              </span>
+                {category.label}
+              </Link>
             ))}
           </div>
         </section>
