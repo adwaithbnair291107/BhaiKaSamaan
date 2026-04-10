@@ -21,6 +21,8 @@ type ListingDetailViewProps = {
   listing: Listing;
   offerStatus?: string;
   manageStatus?: string;
+  activeOfferId?: string;
+  activeOfferStep?: string;
   canManageListing: boolean;
   userName?: string;
   userEmail?: string;
@@ -32,6 +34,8 @@ export function ListingDetailView({
   listing,
   offerStatus,
   manageStatus,
+  activeOfferId,
+  activeOfferStep,
   canManageListing,
   userName,
   userEmail,
@@ -40,6 +44,7 @@ export function ListingDetailView({
 }: ListingDetailViewProps) {
   const listingPlace = listing.location || listing.city;
   const isCompetitiveListing = listing.collegeSlug === COMPETITIVE_EXAMS_SLUG;
+  const listingIsSold = listing.status === "sold";
 
   return (
     <>
@@ -65,6 +70,11 @@ export function ListingDetailView({
             This is the seller&apos;s expected price. Buyers can offer the price they feel is appropriate, and the seller
             will receive the offer when it meets or exceeds the minimum price set by the seller.
           </p>
+          {listingIsSold ? (
+            <div className="mt-4 rounded-2xl bg-ink/5 px-4 py-3 text-sm text-ink/70">
+              This listing has been marked as sold. New offers are closed.
+            </div>
+          ) : null}
 
           <div className="mt-6 flex flex-wrap gap-2 text-sm text-ink/75">
             <span className="rounded-full bg-mist px-4 py-2">
@@ -123,6 +133,18 @@ export function ListingDetailView({
             </p>
           ) : null}
 
+          {offerStatus === "confirmed" ? (
+            <p className="mt-6 rounded-2xl bg-moss/10 px-4 py-3 text-sm text-moss">
+              The seller confirmed this deal and closed the conversation.
+            </p>
+          ) : null}
+
+          {offerStatus === "sold" ? (
+            <p className="mt-6 rounded-2xl bg-ink/5 px-4 py-3 text-sm text-ink/70">
+              The seller confirmed this deal and marked the listing as sold.
+            </p>
+          ) : null}
+
           {offerStatus === "missing" || offerStatus === "invalid" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               Please enter a valid buyer name and offer amount.
@@ -146,7 +168,13 @@ export function ListingDetailView({
             </p>
           ) : null}
 
-          {userEmail ? (
+          {listingIsSold ? (
+            <div className="mt-6 rounded-[24px] border border-dashed border-ink/15 bg-[#f7f1e3] p-5">
+              <p className="text-sm leading-6 text-ink/68">
+                This listing is sold. You can still read any previous conversation thread below, but no new offers can be sent.
+              </p>
+            </div>
+          ) : userEmail ? (
             <form action={submitOffer} className="mt-6 grid gap-5">
               <input type="hidden" name="listingId" value={listing.id} />
 
@@ -230,29 +258,96 @@ export function ListingDetailView({
             {sellerThreads.length > 0 ? (
               sellerThreads.map((thread) => (
                 <article key={thread.id} className="rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-5">
+                  {activeOfferId === thread.id && activeOfferStep === "deal" && thread.status === "open" ? (
+                    <div className="mb-4 rounded-[22px] border border-ink/10 bg-white px-4 py-4 text-sm text-ink/70">
+                      <p className="font-semibold text-ink">Is this deal confirmed?</p>
+                      <p className="mt-1 text-sm text-ink/60">Choose yes only if the buyer agreed to the final price.</p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <Link
+                          href={`/listings/${listing.id}?thread=${thread.id}&step=close`}
+                          className="rounded-full bg-moss px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-ink"
+                        >
+                          Yes, confirmed
+                        </Link>
+                        <form action={closeOfferConversation}>
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <input type="hidden" name="offerId" value={thread.id} />
+                          <input type="hidden" name="resolution" value="close_only" />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-clay/30 hover:text-clay"
+                          >
+                            No, close conversation
+                          </button>
+                        </form>
+                        <Link
+                          href={`/listings/${listing.id}`}
+                          className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink/70 transition hover:text-ink"
+                        >
+                          Cancel
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {activeOfferId === thread.id && activeOfferStep === "close" && thread.status === "open" ? (
+                    <div className="mb-4 rounded-[22px] border border-ink/10 bg-white px-4 py-4 text-sm text-ink/70">
+                      <p className="font-semibold text-ink">Should we close this listing now?</p>
+                      <p className="mt-1 text-sm text-ink/60">
+                        If you close it now, the listing will be marked sold for 14 days and then deleted.
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-3">
+                        <form action={closeOfferConversation}>
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <input type="hidden" name="offerId" value={thread.id} />
+                          <input type="hidden" name="resolution" value="confirm_and_sell" />
+                          <button
+                            type="submit"
+                            className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-moss"
+                          >
+                            Yes, close listing
+                          </button>
+                        </form>
+                        <form action={closeOfferConversation}>
+                          <input type="hidden" name="listingId" value={listing.id} />
+                          <input type="hidden" name="offerId" value={thread.id} />
+                          <input type="hidden" name="resolution" value="confirm_keep_open" />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-moss/40 hover:text-moss"
+                          >
+                            Not yet
+                          </button>
+                        </form>
+                        <Link
+                          href={`/listings/${listing.id}`}
+                          className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink/70 transition hover:text-ink"
+                        >
+                          Cancel
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="text-lg font-semibold text-ink">{thread.buyerName}</p>
                       <p className="mt-1 text-sm text-ink/65">
                         Offer: Rs. {thread.amount}
-                        {thread.buyerContact ? ` • ${thread.buyerContact}` : ""}
+                        {thread.buyerContact ? ` - ${thread.buyerContact}` : ""}
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-moss">
                         {thread.status}
                       </span>
-                      {thread.status !== "closed" ? (
-                        <form action={closeOfferConversation}>
-                          <input type="hidden" name="listingId" value={listing.id} />
-                          <input type="hidden" name="offerId" value={thread.id} />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-clay/30 hover:text-clay"
-                          >
-                            Close conversation
-                          </button>
-                        </form>
+                      {thread.status === "open" ? (
+                        <Link
+                          href={`/listings/${listing.id}?thread=${thread.id}&step=deal`}
+                          className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-clay/30 hover:text-clay"
+                        >
+                          Close conversation
+                        </Link>
                       ) : null}
                       <form action={deleteOfferConversation}>
                         <input type="hidden" name="listingId" value={listing.id} />
@@ -282,7 +377,7 @@ export function ListingDetailView({
                     )}
                   </div>
 
-                  {thread.status !== "closed" ? (
+                  {thread.status === "open" ? (
                     <form action={sendOfferMessage} className="mt-4 grid gap-3">
                       <input type="hidden" name="listingId" value={listing.id} />
                       <input type="hidden" name="offerId" value={thread.id} />
@@ -343,7 +438,7 @@ export function ListingDetailView({
                   )}
                 </div>
 
-                {thread.status !== "closed" ? (
+                {thread.status === "open" ? (
                   <form action={sendOfferMessage} className="mt-4 grid gap-3">
                     <input type="hidden" name="listingId" value={listing.id} />
                     <input type="hidden" name="offerId" value={thread.id} />

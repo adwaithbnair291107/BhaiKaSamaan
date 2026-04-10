@@ -6,12 +6,14 @@ async function getFooterStats() {
   if (!supabase) {
     return {
       totalUsers: 0,
-      totalListings: 0
+      totalListings: 0,
+      confirmedDeals: 0
     };
   }
 
-  const [{ count: totalListings }, usersResponse] = await Promise.all([
+  const [{ count: totalListings }, { count: confirmedDeals }, usersResponse] = await Promise.all([
     supabase.from("listings").select("*", { count: "exact", head: true }),
+    supabase.from("offers").select("*", { count: "exact", head: true }).eq("status", "confirmed"),
     supabase.auth.admin.listUsers({
       page: 1,
       perPage: 1000
@@ -20,7 +22,8 @@ async function getFooterStats() {
 
   return {
     totalUsers: usersResponse.data?.users.length ?? 0,
-    totalListings: totalListings ?? 0
+    totalListings: totalListings ?? 0,
+    confirmedDeals: confirmedDeals ?? 0
   };
 }
 
@@ -66,6 +69,10 @@ export async function SiteFooter() {
               <div className="flex min-h-[118px] flex-col justify-between rounded-[24px] bg-white/10 px-5 py-4">
                 <p className="text-sm text-sky-100">Total Listings</p>
                 <p className="mt-2 font-display text-4xl">{stats.totalListings}</p>
+              </div>
+              <div className="flex min-h-[118px] flex-col justify-between rounded-[24px] bg-white/10 px-5 py-4 sm:col-span-2 lg:col-span-1">
+                <p className="text-sm text-sky-100">Confirmed Deals</p>
+                <p className="mt-2 font-display text-4xl">{stats.confirmedDeals}</p>
               </div>
             </div>
           </div>
