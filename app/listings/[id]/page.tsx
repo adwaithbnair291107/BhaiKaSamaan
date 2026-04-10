@@ -42,14 +42,32 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
         )}
 
         <section className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-          <div className="relative min-h-[340px] overflow-hidden rounded-[32px] bg-white shadow-card">
-            <Image
-              src={listing.image}
-              alt={listing.title}
-              fill
-              className="object-cover"
-              unoptimized={isDataUrl}
-            />
+          <div className="grid gap-4">
+            <div className="relative min-h-[340px] overflow-hidden rounded-[32px] bg-white shadow-card">
+              <Image
+                src={listing.image}
+                alt={listing.title}
+                fill
+                className="object-cover"
+                unoptimized={isDataUrl}
+              />
+            </div>
+
+            {listing.images.length > 1 ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {listing.images.map((image, index) => (
+                  <div key={`${image}-${index}`} className="relative h-28 overflow-hidden rounded-[24px] bg-white shadow-card">
+                    <Image
+                      src={image}
+                      alt={`${listing.title} image ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      unoptimized={image.startsWith("data:")}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-[32px] bg-white p-8 shadow-card">

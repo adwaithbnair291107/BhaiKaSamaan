@@ -19,6 +19,7 @@ export type Listing = {
   postedAgo: string;
   description: string;
   image: string;
+  images: string[];
 };
 
 export type Offer = {
@@ -181,8 +182,29 @@ function formatPostedAgo(createdAt: string) {
   return `${diffYears} year${diffYears === 1 ? "" : "s"} ago`;
 }
 
+function parseListingImages(image: string | null) {
+  if (!image) {
+    return [DEFAULT_LISTING_IMAGE];
+  }
+
+  try {
+    const parsed = JSON.parse(image);
+    if (Array.isArray(parsed)) {
+      const cleanedImages = parsed.filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+      if (cleanedImages.length > 0) {
+        return cleanedImages;
+      }
+    }
+  } catch {
+    // Older listings store a single image string. Keep supporting that format.
+  }
+
+  return [image];
+}
+
 function mapListing(row: ListingRow, collegesBySlug: Map<string, CollegeRow>): Listing {
   const college = collegesBySlug.get(row.college_slug);
+  const images = parseListingImages(row.image);
 
   return {
     id: row.id,
@@ -200,7 +222,8 @@ function mapListing(row: ListingRow, collegesBySlug: Map<string, CollegeRow>): L
     postedBy: row.posted_by,
     postedAgo: formatPostedAgo(row.created_at),
     description: row.description,
-    image: row.image ?? DEFAULT_LISTING_IMAGE
+    image: images[0] ?? DEFAULT_LISTING_IMAGE,
+    images
   };
 }
 
@@ -367,7 +390,7 @@ type CreateListingInput = {
   postedBy: string;
   condition?: string;
   location?: string;
-  image?: string;
+  images?: string[];
 };
 
 export async function createListing(input: CreateListingInput): Promise<string> {
@@ -389,7 +412,7 @@ export async function createListing(input: CreateListingInput): Promise<string> 
         location: input.location || null,
         posted_by: input.postedBy,
         description: input.description,
-        image: input.image || null
+        image: input.images?.length ? JSON.stringify(input.images) : null
       }
     ])
   });

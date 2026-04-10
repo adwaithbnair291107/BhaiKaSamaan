@@ -56,6 +56,12 @@ export default async function SellPage({ searchParams }: SellPageProps) {
             </p>
           ) : null}
 
+          {status === "image-count" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please upload no more than 3 images.
+            </p>
+          ) : null}
+
           {status === "image-type" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               Please upload a JPG, PNG, or WebP image.

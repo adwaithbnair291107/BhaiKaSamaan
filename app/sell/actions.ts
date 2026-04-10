@@ -59,10 +59,18 @@ export async function submitListing(formData: FormData) {
     redirect("/sell?status=price-range");
   }
 
-  const imageFile = formData.get("imageFile");
-  let image: string | undefined;
+  const imageFiles = formData.getAll("imageFiles");
+  const images: string[] = [];
 
-  if (imageFile instanceof File && imageFile.size > 0) {
+  if (imageFiles.length > 3) {
+    redirect("/sell?status=image-count");
+  }
+
+  for (const imageFile of imageFiles) {
+    if (!(imageFile instanceof File) || imageFile.size === 0) {
+      continue;
+    }
+
     if (imageFile.size > 2 * 1024 * 1024) {
       redirect("/sell?status=image-size");
     }
@@ -73,7 +81,7 @@ export async function submitListing(formData: FormData) {
     }
 
     const bytes = await imageFile.arrayBuffer();
-    image = `data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`;
+    images.push(`data:${imageFile.type};base64,${Buffer.from(bytes).toString("base64")}`);
   }
 
   const resolvedCollege = collegeSlug
@@ -97,7 +105,7 @@ export async function submitListing(formData: FormData) {
     year: requireValue(formData, "year") || undefined,
     condition: requireValue(formData, "condition") || undefined,
     location: isCompetitiveCategory ? competitiveLocation : location || undefined,
-    image
+    images
   });
 
   revalidatePath("/");

@@ -25,7 +25,7 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
   const [collegeCity, setCollegeCity] = useState("");
   const deferredCollegeQuery = useDeferredValue(collegeQuery);
   const [selectedCollegeSlug, setSelectedCollegeSlug] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [selectedFileName, setSelectedFileName] = useState("No file selected");
   const [isCollegeMenuOpen, setIsCollegeMenuOpen] = useState(false);
 
@@ -81,25 +81,22 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
   }
 
   function handleImageChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    setSelectedFileName(file?.name ?? "No file selected");
+    const files = Array.from(event.target.files ?? []).slice(0, 3);
+    setSelectedFileName(
+      files.length > 0 ? `${files.length} image${files.length === 1 ? "" : "s"} selected` : "No file selected"
+    );
 
-    setPreviewUrl((currentPreview) => {
-      if (currentPreview) {
-        URL.revokeObjectURL(currentPreview);
-      }
-
-      return file ? URL.createObjectURL(file) : null;
+    setPreviewUrls((currentPreviews) => {
+      currentPreviews.forEach((preview) => URL.revokeObjectURL(preview));
+      return files.map((file) => URL.createObjectURL(file));
     });
   }
 
   useEffect(() => {
     return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      previewUrls.forEach((preview) => URL.revokeObjectURL(preview));
     };
-  }, [previewUrl]);
+  }, [previewUrls]);
 
   return (
     <form action={action} className="mt-8 grid gap-6">
@@ -426,33 +423,39 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
           </label>
 
           <label className="grid gap-3 text-sm font-medium text-ink">
-            <span className="text-[0.95rem] font-semibold">Listing Image</span>
+            <span className="text-[0.95rem] font-semibold">Listing Images</span>
             <div className="rounded-[24px] border border-ink/10 bg-[#f7f1e3] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <label className="inline-flex w-fit cursor-pointer items-center rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:bg-moss">
                   Choose from device
                   <input
-                    name="imageFile"
+                    name="imageFiles"
                     type="file"
                     accept="image/png,image/jpeg,image/webp,image/jpg"
+                    multiple
                     onChange={handleImageChange}
                     className="sr-only"
                   />
                 </label>
                 <span className="text-sm text-ink/70 sm:text-right">{selectedFileName}</span>
               </div>
+              <p className="mt-3 text-xs text-ink/55">Upload up to 3 images.</p>
             </div>
           </label>
         </div>
       </section>
 
-      {previewUrl ? (
-        <div className="overflow-hidden rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-3 shadow-card">
-          <img src={previewUrl} alt="Listing preview" className="h-72 w-full rounded-[20px] object-cover" />
+      {previewUrls.length > 0 ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {previewUrls.map((previewUrl, index) => (
+            <div key={previewUrl} className="overflow-hidden rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-3 shadow-card">
+              <img src={previewUrl} alt={`Listing preview ${index + 1}`} className="h-56 w-full rounded-[20px] object-cover" />
+            </div>
+          ))}
         </div>
       ) : (
         <div className="rounded-[28px] border border-dashed border-ink/15 bg-[#f7f1e3] p-6 text-sm text-ink/65">
-          Choose an image from your device and we will preview it here before posting.
+          Choose up to 3 images from your device and we will preview them here before posting.
         </div>
       )}
 
