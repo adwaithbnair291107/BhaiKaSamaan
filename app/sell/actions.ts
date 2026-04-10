@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createListing, createOffer, ensureCollegeByName, getListing } from "@/lib/data";
+import { createListing, createOffer, ensureCollegeByName, getListing, updateListing } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
 
 function requireValue(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -10,6 +11,15 @@ function requireValue(formData: FormData, key: string) {
 }
 
 export async function submitListing(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/sell?status=auth");
+  }
+
   const title = requireValue(formData, "title");
   const collegeSlug = requireValue(formData, "collegeSlug");
   const collegeName = requireValue(formData, "collegeName");
@@ -101,6 +111,7 @@ export async function submitListing(formData: FormData) {
 
   const listingId = await createListing({
     title,
+    userId: user.id,
     collegeSlug: resolvedCollege.slug,
     category: storedCategory,
     minPrice,
@@ -120,11 +131,20 @@ export async function submitListing(formData: FormData) {
 }
 
 export async function submitOffer(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
   const listingId = requireValue(formData, "listingId");
   const buyerName = requireValue(formData, "buyerName");
   const buyerContact = requireValue(formData, "buyerContact");
   const message = requireValue(formData, "message");
   const amountValue = requireValue(formData, "amount");
+
+  if (!user) {
+    redirect(`/listings/${listingId}?offer=auth`);
+  }
 
   if (!listingId || !buyerName || !amountValue) {
     redirect(`/listings/${listingId}?offer=missing`);
@@ -154,4 +174,63 @@ export async function submitOffer(formData: FormData) {
 
   revalidatePath(`/listings/${listingId}`);
   redirect(`/listings/${listingId}?offer=sent`);
+}
+
+export async function saveListingChanges(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const listingId = requireValue(formData, "listingId");
+  const title = requireValue(formData, "title");
+  const postedBy = requireValue(formData, "postedBy");
+  const description = requireValue(formData, "description");
+  const expectedPriceValue = requireValue(formData, "expectedPrice");
+  const minPriceValue = requireValue(formData, "minPrice");
+  const condition = requireValue(formData, "condition");
+  const location = requireValue(formData, "location");
+
+  if (!listingId) {
+    redirect("/");
+  }
+
+  if (!user) {
+    redirect(`/listings/${listingId}?manage=auth`);
+  }
+
+  const listing = await getListing(listingId);
+  if (!listing || listing.userId !== user.id) {
+    redirect(`/listings/${listingId}?manage=denied`);
+  }
+
+  if (!title || !postedBy || !description || !expectedPriceValue || !minPriceValue || !condition) {
+    redirect(`/listings/${listingId}?manage=missing`);
+  }
+
+  const expectedPrice = Number(expectedPriceValue);
+  const minPrice = Number(minPriceValue);
+  if (Number.isNaN(expectedPrice) || Number.isNaN(minPrice) || expectedPrice <= 0 || minPrice <= 0) {
+    redirect(`/listings/${listingId}?manage=price`);
+  }
+
+  if (expectedPrice < minPrice) {
+    redirect(`/listings/${listingId}?manage=range`);
+  }
+
+  await updateListing({
+    id: listingId,
+    userId: user.id,
+    title,
+    postedBy,
+    description,
+    minPrice,
+    expectedPrice,
+    condition,
+    location
+  });
+
+  revalidatePath("/");
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/listings/${listingId}?manage=saved`);
 }

@@ -1,6 +1,13 @@
 import Link from "next/link";
+import { AuthButton } from "@/components/auth-button";
+import { createClient } from "@/lib/supabase/server";
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
   return (
     <header className="border-b border-ink/10 bg-white/70 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
@@ -17,6 +24,7 @@ export function SiteHeader() {
           >
             Seller
           </Link>
+          <AuthButton isSignedIn={Boolean(user)} userLabel={user?.email ?? "Signed in"} />
         </nav>
       </div>
     </header>

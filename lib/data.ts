@@ -7,6 +7,7 @@ export type Listing = {
   title: string;
   collegeSlug: string;
   collegeName: string;
+  userId?: string | null;
   branch?: string | null;
   year?: string | null;
   category: string;
@@ -50,6 +51,7 @@ type CollegeRow = {
 
 type ListingRow = {
   id: string;
+  user_id?: string | null;
   college_slug: string;
   title: string;
   branch: string | null;
@@ -211,6 +213,7 @@ function mapListing(row: ListingRow, collegesBySlug: Map<string, CollegeRow>): L
     title: row.title,
     collegeSlug: row.college_slug,
     collegeName: college?.name ?? "Unknown College",
+    userId: row.user_id ?? null,
     branch: row.branch ?? undefined,
     year: row.year ?? undefined,
     category: row.category,
@@ -382,6 +385,7 @@ type CreateListingInput = {
   title: string;
   collegeSlug: string;
   category: string;
+  userId: string;
   minPrice: number;
   expectedPrice: number;
   branch?: string;
@@ -402,6 +406,7 @@ export async function createListing(input: CreateListingInput): Promise<string> 
     body: JSON.stringify([
       {
         college_slug: input.collegeSlug,
+        user_id: input.userId,
         title: input.title,
         branch: input.branch || null,
         year: input.year || null,
@@ -485,4 +490,37 @@ export async function createOffer(input: CreateOfferInput): Promise<string> {
   }
 
   return created.id;
+}
+
+type UpdateListingInput = {
+  id: string;
+  userId: string;
+  title: string;
+  minPrice: number;
+  expectedPrice: number;
+  description: string;
+  postedBy: string;
+  condition: string;
+  location?: string;
+};
+
+export async function updateListing(input: UpdateListingInput): Promise<void> {
+  await querySupabase(
+    `listings?id=eq.${encodeURIComponent(input.id)}&user_id=eq.${encodeURIComponent(input.userId)}`,
+    {
+    method: "PATCH",
+    headers: {
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({
+      title: input.title,
+      min_price: input.minPrice,
+      expected_price: input.expectedPrice,
+      description: input.description,
+      posted_by: input.postedBy,
+      condition: input.condition,
+      location: input.location || null
+    })
+    }
+  );
 }

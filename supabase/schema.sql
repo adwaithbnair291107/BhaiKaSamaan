@@ -9,6 +9,7 @@ create table if not exists public.colleges (
 
 create table if not exists public.listings (
   id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete set null,
   college_slug text not null references public.colleges(slug) on delete cascade,
   title text not null,
   branch text,
@@ -25,6 +26,7 @@ create table if not exists public.listings (
   created_at timestamptz not null default now()
 );
 
+alter table public.listings add column if not exists user_id uuid references auth.users(id) on delete set null;
 alter table public.listings add column if not exists min_price numeric(10, 2);
 alter table public.listings add column if not exists expected_price numeric(10, 2);
 alter table public.listings add column if not exists price numeric(10, 2);

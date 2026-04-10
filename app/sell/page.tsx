@@ -1,7 +1,9 @@
 import { submitListing } from "@/app/sell/actions";
 import { SellForm } from "@/app/sell/sell-form";
+import { AuthButton } from "@/components/auth-button";
 import { SiteHeader } from "@/components/site-header";
 import { categories, getColleges } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
 
 type SellPageProps = {
   searchParams?: {
@@ -10,6 +12,10 @@ type SellPageProps = {
 };
 
 export default async function SellPage({ searchParams }: SellPageProps) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
   const colleges = await getColleges();
   const status = searchParams?.status;
 
@@ -29,6 +35,12 @@ export default async function SellPage({ searchParams }: SellPageProps) {
           {status === "missing" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               Please fill in all required fields before posting.
+            </p>
+          ) : null}
+
+          {status === "auth" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Please sign in with Google before posting a listing.
             </p>
           ) : null}
 
@@ -235,7 +247,19 @@ export default async function SellPage({ searchParams }: SellPageProps) {
           </form>
           </div>
 
-          <SellForm colleges={colleges} categories={categories} action={submitListing} />
+          {user ? (
+            <SellForm colleges={colleges} categories={categories} action={submitListing} />
+          ) : (
+            <div className="mt-8 rounded-[28px] border border-dashed border-ink/15 bg-[#f7f1e3] p-6">
+              <p className="text-lg font-semibold text-ink">Sign in to sell</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-ink/68">
+                Use your Google account to create listings and manage them later from any device.
+              </p>
+              <div className="mt-5">
+                <AuthButton isSignedIn={false} />
+              </div>
+            </div>
+          )}
         </section>
       </main>
     </div>

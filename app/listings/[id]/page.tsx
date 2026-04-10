@@ -1,9 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { submitOffer } from "@/app/sell/actions";
+import { saveListingChanges, submitOffer } from "@/app/sell/actions";
+import { AuthButton } from "@/components/auth-button";
 import { SiteHeader } from "@/components/site-header";
 import { getListing } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
   params: {
@@ -11,10 +13,16 @@ type PageProps = {
   };
   searchParams?: {
     offer?: string;
+    manage?: string;
   };
 };
 
 export default async function ListingDetailPage({ params, searchParams }: PageProps) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
   const listing = await getListing(params.id);
 
   if (!listing) {
@@ -25,6 +33,8 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   const listingPlace = listing.location || listing.city;
   const isCompetitiveListing = listing.collegeSlug === "competitive-exams";
   const offerStatus = searchParams?.offer;
+  const manageStatus = searchParams?.manage;
+  const canManageListing = Boolean(user && listing.userId === user.id);
 
   return (
     <div className="min-h-screen">
@@ -97,6 +107,12 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
             </div>
 
             <p className="mt-8 leading-7 text-ink/80">{listing.description}</p>
+
+            {canManageListing ? (
+              <div className="mt-8 rounded-[24px] border border-moss/20 bg-moss/5 px-5 py-4 text-sm text-moss">
+                Seller access is enabled for this signed-in account. You can edit this listing below from any device.
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -126,64 +142,83 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
               </p>
             ) : null}
 
-            <form action={submitOffer} className="mt-6 grid gap-5">
-              <input type="hidden" name="listingId" value={listing.id} />
+            {offerStatus === "auth" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Please sign in with Google before sending an offer.
+              </p>
+            ) : null}
 
-              <label className="grid gap-2 text-sm font-medium text-ink">
-                Buyer Name
-                <input
-                  name="buyerName"
-                  required
-                  className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
-                  placeholder="Your name"
-                />
-              </label>
+            {user ? (
+              <form action={submitOffer} className="mt-6 grid gap-5">
+                <input type="hidden" name="listingId" value={listing.id} />
 
-              <label className="grid gap-2 text-sm font-medium text-ink">
-                Contact Info
-                <input
-                  name="buyerContact"
-                  className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
-                  placeholder="Phone, email, or Instagram"
-                />
-              </label>
-
-              <div className="grid gap-5 md:grid-cols-2">
                 <label className="grid gap-2 text-sm font-medium text-ink">
-                  Offer Amount
+                  Buyer Name
                   <input
-                    name="amount"
-                    type="number"
-                    min="1"
+                    name="buyerName"
                     required
-                    defaultValue={listing.expectedPrice}
+                    defaultValue={user.user_metadata?.full_name ?? user.email ?? ""}
                     className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                    placeholder="Your name"
                   />
                 </label>
 
-                <div className="rounded-[24px] border border-dashed border-ink/15 bg-[#f7f1e3] px-5 py-4 text-sm text-ink/65">
-                  Posted price: Rs. {listing.expectedPrice}
-                  <br />
-                  Offers below the seller minimum are blocked.
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Contact Info
+                  <input
+                    name="buyerContact"
+                    defaultValue={user.email ?? ""}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                    placeholder="Phone, email, or Instagram"
+                  />
+                </label>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-medium text-ink">
+                    Offer Amount
+                    <input
+                      name="amount"
+                      type="number"
+                      min="1"
+                      required
+                      defaultValue={listing.expectedPrice}
+                      className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                    />
+                  </label>
+
+                  <div className="rounded-[24px] border border-dashed border-ink/15 bg-[#f7f1e3] px-5 py-4 text-sm text-ink/65">
+                    Posted price: Rs. {listing.expectedPrice}
+                    <br />
+                    Offers below the seller minimum are blocked.
+                  </div>
+                </div>
+
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Message to Seller
+                  <textarea
+                    name="message"
+                    rows={4}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                    placeholder="Why this price works for you, pickup timing, or any question"
+                  />
+                </label>
+
+                <div className="flex flex-wrap gap-3">
+                  <button className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
+                    Send Offer
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="mt-6 rounded-[24px] border border-dashed border-ink/15 bg-[#f7f1e3] p-5">
+                <p className="text-sm leading-6 text-ink/68">
+                  Sign in with Google to make an offer and track your buying activity from any device.
+                </p>
+                <div className="mt-4">
+                  <AuthButton isSignedIn={false} />
                 </div>
               </div>
-
-              <label className="grid gap-2 text-sm font-medium text-ink">
-                Message to Seller
-                <textarea
-                  name="message"
-                  rows={4}
-                  className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
-                  placeholder="Why this price works for you, pickup timing, or any question"
-                />
-              </label>
-
-              <div className="flex flex-wrap gap-3">
-                <button className="rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                  Send Offer
-                </button>
-              </div>
-            </form>
+            )}
           </div>
 
           <div className="rounded-[32px] bg-white p-8 shadow-card">
@@ -206,6 +241,144 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
             </div>
           </div>
         </section>
+
+        {canManageListing ? (
+          <section className="mt-8 rounded-[32px] bg-white p-8 shadow-card">
+            <p className="text-sm uppercase tracking-[0.26em] text-moss">Seller Controls</p>
+            <h2 className="mt-3 font-display text-3xl text-ink">Edit your listing</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/68">
+              This edit access is tied to your Google account, so you can manage the listing from any device after signing in.
+            </p>
+
+            {manageStatus === "saved" ? (
+              <p className="mt-6 rounded-2xl bg-moss/10 px-4 py-3 text-sm text-moss">
+                Listing changes saved.
+              </p>
+            ) : null}
+
+            {manageStatus === "denied" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                This signed-in account does not own that listing.
+              </p>
+            ) : null}
+
+            {manageStatus === "auth" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Please sign in with Google to manage your listing.
+              </p>
+            ) : null}
+
+            {manageStatus === "missing" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Please fill in all required seller fields before saving.
+              </p>
+            ) : null}
+
+            {manageStatus === "price" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Please enter valid prices greater than zero.
+              </p>
+            ) : null}
+
+            {manageStatus === "range" ? (
+              <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Expected price must be greater than or equal to minimum price.
+              </p>
+            ) : null}
+
+            <form action={saveListingChanges} className="mt-6 grid gap-5">
+              <input type="hidden" name="listingId" value={listing.id} />
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Title
+                  <input
+                    name="title"
+                    required
+                    defaultValue={listing.title}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Seller Name
+                  <input
+                    name="postedBy"
+                    required
+                    defaultValue={listing.postedBy}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Expected Price
+                  <input
+                    name="expectedPrice"
+                    type="number"
+                    min="1"
+                    required
+                    defaultValue={listing.expectedPrice}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Minimum Price
+                  <input
+                    name="minPrice"
+                    type="number"
+                    min="1"
+                    required
+                    defaultValue={listing.minPrice}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                  />
+                </label>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Condition
+                  <select
+                    name="condition"
+                    defaultValue={listing.condition}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                  >
+                    <option value="Like New">Like New</option>
+                    <option value="Good">Good</option>
+                    <option value="Used">Used</option>
+                    <option value="Needs Review">Needs Review</option>
+                  </select>
+                </label>
+
+                <label className="grid gap-2 text-sm font-medium text-ink">
+                  Location
+                  <input
+                    name="location"
+                    defaultValue={listing.location ?? ""}
+                    className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                  />
+                </label>
+              </div>
+
+              <label className="grid gap-2 text-sm font-medium text-ink">
+                Description
+                <textarea
+                  name="description"
+                  required
+                  rows={5}
+                  defaultValue={listing.description}
+                  className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
+                />
+              </label>
+
+              <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
+                Save Changes
+              </button>
+            </form>
+          </section>
+        ) : null}
       </main>
     </div>
   );
