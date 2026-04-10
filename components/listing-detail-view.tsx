@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   closeOfferConversation,
   deleteListing,
+  deleteOfferConversation,
   saveListingChanges,
   sendOfferMessage,
   submitOffer
@@ -128,6 +129,11 @@ export function ListingDetailView({
             </p>
           ) : null}
 
+          {offerStatus === "deleted" ? (
+            <p className="mt-6 rounded-2xl bg-moss/10 px-4 py-3 text-sm text-moss">
+              This conversation was deleted by the seller.
+            </p>
+          ) : null}
           {offerStatus === "closed" ? (
             <p className="mt-6 rounded-2xl bg-ink/5 px-4 py-3 text-sm text-ink/70">
               This conversation has been closed by the seller.
@@ -242,6 +248,16 @@ export function ListingDetailView({
                           </button>
                         </form>
                       ) : null}
+                      <form action={deleteOfferConversation}>
+                        <input type="hidden" name="listingId" value={listing.id} />
+                        <input type="hidden" name="offerId" value={thread.id} />
+                        <button
+                          type="submit"
+                          className="rounded-full border border-clay/30 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-clay transition hover:bg-clay/10"
+                        >
+                          Delete conversation
+                        </button>
+                      </form>
                     </div>
                   </div>
 
@@ -279,7 +295,7 @@ export function ListingDetailView({
                     </form>
                   ) : (
                     <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
-                      This conversation is closed. The buyer can still read the thread, but no new messages can be sent.
+                      This conversation is closed. The buyer can still read the thread, and you can delete it anytime if you no longer need it.
                     </div>
                   )}
                 </article>

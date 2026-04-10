@@ -461,6 +461,57 @@ export async function closeOfferConversation(formData: FormData) {
   redirect(`/listings/${listingId}?offer=closed`);
 }
 
+export async function deleteOfferConversation(formData: FormData) {
+  const supabase = createClient();
+  const {
+    data: { user }
+  } = await supabase.auth.getUser();
+
+  const listingId = requireValue(formData, "listingId");
+  const offerId = requireValue(formData, "offerId");
+
+  if (!listingId) {
+    redirect("/");
+  }
+
+  if (!user) {
+    redirect(`/listings/${listingId}?offer=auth`);
+  }
+
+  const listing = await getListing(listingId);
+  if (!listing || listing.userId !== user.id) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  const { data: offer, error: offerError } = await supabase
+    .from("offers")
+    .select("id")
+    .eq("id", offerId)
+    .eq("listing_id", listingId)
+    .single();
+
+  if (offerError || !offer) {
+    redirect(`/listings/${listingId}?offer=invalid`);
+  }
+
+  const { error: deleteMessagesError } = await supabase.from("offer_messages").delete().eq("offer_id", offerId);
+  if (deleteMessagesError) {
+    throw deleteMessagesError;
+  }
+
+  const { error: deleteOfferError } = await supabase
+    .from("offers")
+    .delete()
+    .eq("id", offerId)
+    .eq("listing_id", listingId);
+
+  if (deleteOfferError) {
+    throw deleteOfferError;
+  }
+
+  revalidatePath(`/listings/${listingId}`);
+  redirect(`/listings/${listingId}?offer=deleted`);
+}
 export async function saveListingChanges(formData: FormData) {
   const listingId = requireValue(formData, "listingId");
 
