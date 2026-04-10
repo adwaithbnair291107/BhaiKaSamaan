@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { deleteListing, saveListingChanges, sendOfferMessage, submitOffer } from "@/app/sell/actions";
 import { AuthButton } from "@/components/auth-button";
+import { ListingImageGallery } from "@/components/listing-image-gallery";
 import {
   COMPETITIVE_EXAMS_LABEL,
   COMPETITIVE_EXAMS_SLUG,
@@ -30,7 +31,6 @@ export function ListingDetailView({
   buyerThreads,
   sellerThreads
 }: ListingDetailViewProps) {
-  const isDataUrl = listing.image.startsWith("data:");
   const listingPlace = listing.location || listing.city;
   const isCompetitiveListing = listing.collegeSlug === COMPETITIVE_EXAMS_SLUG;
 
@@ -47,25 +47,7 @@ export function ListingDetailView({
       )}
 
       <section className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="grid gap-4">
-          <div className="relative min-h-[340px] overflow-hidden rounded-[32px] bg-white shadow-card">
-            <Image src={listing.image} alt={listing.title} fill className="object-cover" unoptimized={isDataUrl} />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {listing.images.map((image, index) => (
-              <div key={`${image}-${index}`} className="relative h-28 overflow-hidden rounded-[24px] bg-white shadow-card">
-                <Image
-                  src={image}
-                  alt={`${listing.title} image ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  unoptimized={image.startsWith("data:")}
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+        <ListingImageGallery images={listing.images} title={listing.title} />
 
         <div className="rounded-[32px] bg-white p-8 shadow-card">
           <p className="text-sm uppercase tracking-[0.26em] text-moss">{listing.category}</p>
