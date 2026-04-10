@@ -28,8 +28,7 @@ export default async function SellPage({ searchParams }: SellPageProps) {
           <p className="text-sm uppercase tracking-[0.26em] text-moss">Seller Flow</p>
           <h1 className="mt-3 font-display text-5xl text-ink">Post an item in under a minute</h1>
           <p className="mt-4 max-w-2xl text-lg text-ink/70">
-            This first version is static for local testing. Later we’ll connect the form to Supabase
-            so real students can create listings.
+            Sign in with Google to post your item, upload photos, and manage your listing from any device.
           </p>
 
           {status === "missing" ? (
