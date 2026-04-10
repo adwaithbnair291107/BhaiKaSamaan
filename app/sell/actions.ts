@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { isRedirectError } from "next/dist/client/components/redirect";
 import { createListing, createOffer, ensureCollegeByName, getListing, updateListing } from "@/lib/data";
 import { createClient } from "@/lib/supabase/server";
 
@@ -130,6 +131,10 @@ export async function submitListing(formData: FormData) {
     revalidatePath(`/college/${resolvedCollege.slug}`);
     redirect(`/listings/${listingId}`);
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     console.error("Failed to submit listing", error);
     redirect("/sell?status=error");
   }
@@ -241,6 +246,10 @@ export async function saveListingChanges(formData: FormData) {
     revalidatePath(`/listings/${listingId}`);
     redirect(`/listings/${listingId}?manage=saved`);
   } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
     console.error("Failed to save listing changes", error);
     redirect(`/listings/${listingId}?manage=error`);
   }
