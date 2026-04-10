@@ -61,6 +61,7 @@ export async function submitListing(formData: FormData) {
 
   const imageFiles = formData.getAll("imageFiles");
   const images: string[] = [];
+  let totalImageBytes = 0;
 
   if (imageFiles.length > 3) {
     redirect("/sell?status=image-count");
@@ -73,6 +74,11 @@ export async function submitListing(formData: FormData) {
 
     if (imageFile.size > 2 * 1024 * 1024) {
       redirect("/sell?status=image-size");
+    }
+
+    totalImageBytes += imageFile.size;
+    if (totalImageBytes > 6 * 1024 * 1024) {
+      redirect("/sell?status=image-total-size");
     }
 
     const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);

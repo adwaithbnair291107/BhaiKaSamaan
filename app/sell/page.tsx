@@ -62,6 +62,12 @@ export default async function SellPage({ searchParams }: SellPageProps) {
             </p>
           ) : null}
 
+          {status === "image-total-size" ? (
+            <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+              Total image size is too large. Keep all 3 images together under 6 MB.
+            </p>
+          ) : null}
+
           {status === "image-type" ? (
             <p className="mt-6 rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
               Please upload a JPG, PNG, or WebP image.
