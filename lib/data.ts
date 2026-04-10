@@ -65,6 +65,27 @@ export const competitiveExamNames = [
   "Other"
 ];
 
+export const indiaStatesWithDistricts: Record<string, string[]> = {
+  "Andhra Pradesh": ["Anantapur", "Chittoor", "Guntur", "Krishna", "Kurnool", "Nellore", "Prakasam", "Tirupati", "Visakhapatnam", "Vijayawada"],
+  "Bihar": ["Arrah", "Bhagalpur", "Darbhanga", "Gaya", "Muzaffarpur", "Patna", "Purnia", "Samastipur"],
+  "Delhi": ["Central Delhi", "East Delhi", "New Delhi", "North Delhi", "North West Delhi", "Shahdara", "South Delhi", "West Delhi"],
+  Gujarat: ["Ahmedabad", "Anand", "Bhavnagar", "Gandhinagar", "Jamnagar", "Rajkot", "Surat", "Vadodara"],
+  Haryana: ["Ambala", "Faridabad", "Gurugram", "Hisar", "Karnal", "Kurukshetra", "Panipat", "Rohtak", "Sonipat"],
+  Jharkhand: ["Bokaro", "Deoghar", "Dhanbad", "Hazaribagh", "Jamshedpur", "Ranchi"],
+  Karnataka: ["Belagavi", "Bengaluru Urban", "Davanagere", "Hubballi", "Kalaburagi", "Mangaluru", "Mysuru", "Shivamogga"],
+  Kerala: ["Ernakulam", "Kannur", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Palakkad", "Thiruvananthapuram", "Thrissur"],
+  "Madhya Pradesh": ["Bhopal", "Gwalior", "Indore", "Jabalpur", "Ratlam", "Rewa", "Sagar", "Ujjain"],
+  Maharashtra: ["Amravati", "Aurangabad", "Kolhapur", "Mumbai", "Nagpur", "Nashik", "Pune", "Solapur", "Thane"],
+  Odisha: ["Balasore", "Berhampur", "Bhubaneswar", "Cuttack", "Puri", "Rourkela", "Sambalpur"],
+  Punjab: ["Amritsar", "Bathinda", "Jalandhar", "Ludhiana", "Mohali", "Pathankot", "Patiala"],
+  Rajasthan: ["Ajmer", "Alwar", "Bikaner", "Jaipur", "Jodhpur", "Kota", "Sikar", "Udaipur"],
+  "Tamil Nadu": ["Chennai", "Coimbatore", "Erode", "Madurai", "Salem", "Tiruchirappalli", "Tirunelveli", "Vellore"],
+  Telangana: ["Hyderabad", "Karimnagar", "Khammam", "Nalgonda", "Nizamabad", "Warangal"],
+  "Uttar Pradesh": ["Agra", "Allahabad", "Aligarh", "Bareilly", "Ghaziabad", "Gorakhpur", "Jhansi", "Kanpur", "Lucknow", "Meerut", "Noida", "Prayagraj", "Varanasi"],
+  Uttarakhand: ["Dehradun", "Haridwar", "Haldwani", "Nainital", "Roorkee", "Udham Singh Nagar"],
+  "West Bengal": ["Asansol", "Durgapur", "Howrah", "Kolkata", "Malda", "Siliguri"]
+};
+
 export const collegeAccessorySubcategories = [
   "College Books",
   "Notes & Printed Material",

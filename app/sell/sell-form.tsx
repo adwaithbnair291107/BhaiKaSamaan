@@ -1,7 +1,12 @@
 "use client";
 
 import { useDeferredValue, useEffect, useId, useState } from "react";
-import { collegeAccessorySubcategories, competitiveExamNames, type College } from "@/lib/data";
+import {
+  collegeAccessorySubcategories,
+  competitiveExamNames,
+  indiaStatesWithDistricts,
+  type College
+} from "@/lib/data";
 
 type SellFormProps = {
   colleges: College[];
@@ -14,6 +19,8 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedExamName, setSelectedExamName] = useState("");
   const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [selectedDistrict, setSelectedDistrict] = useState("");
   const [collegeQuery, setCollegeQuery] = useState("");
   const [collegeCity, setCollegeCity] = useState("");
   const deferredCollegeQuery = useDeferredValue(collegeQuery);
@@ -27,6 +34,7 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
   const helperClassName = "text-xs leading-5 text-ink/55";
   const isCompetitiveCategory = selectedCategory === "Competitive Exam Books";
   const isCollegeAccessoriesCategory = selectedCategory === "College Accessories";
+  const availableDistricts = selectedState ? indiaStatesWithDistricts[selectedState] ?? [] : [];
 
   const normalizedQuery = deferredCollegeQuery.trim().toLowerCase();
   const matchingColleges = normalizedQuery
@@ -115,6 +123,8 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
                 setSelectedCategory(event.target.value);
                 setSelectedExamName("");
                 setSelectedSubcategory("");
+                setSelectedState("");
+                setSelectedDistrict("");
               }}
             >
               <option value="" disabled>
@@ -150,15 +160,61 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
 
         <div className="grid gap-6 md:grid-cols-2">
           {isCompetitiveCategory ? (
-            <label className="grid gap-3 text-sm font-medium text-ink md:col-span-2">
-              <span className="text-[0.95rem] font-semibold">Location</span>
-              <input
-                name="location"
-                required={isCompetitiveCategory}
-                className={fieldClassName}
-                placeholder="Jalandhar / Delhi / Kota / Online handoff"
-              />
-            </label>
+            <>
+              <label className="grid gap-3 text-sm font-medium text-ink">
+                <span className="text-[0.95rem] font-semibold">State</span>
+                <select
+                  name="state"
+                  required
+                  className={fieldClassName}
+                  value={selectedState}
+                  onChange={(event) => {
+                    setSelectedState(event.target.value);
+                    setSelectedDistrict("");
+                  }}
+                >
+                  <option value="" disabled>
+                    Select a state
+                  </option>
+                  {Object.keys(indiaStatesWithDistricts).map((state) => (
+                    <option key={state} value={state}>
+                      {state}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-3 text-sm font-medium text-ink">
+                <span className="text-[0.95rem] font-semibold">District</span>
+                <select
+                  name="district"
+                  required
+                  className={fieldClassName}
+                  value={selectedDistrict}
+                  onChange={(event) => setSelectedDistrict(event.target.value)}
+                  disabled={!selectedState}
+                >
+                  <option value="" disabled>
+                    {selectedState ? "Select a district" : "Select state first"}
+                  </option>
+                  {availableDistricts.map((district) => (
+                    <option key={district} value={district}>
+                      {district}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-3 text-sm font-medium text-ink md:col-span-2">
+                <span className="text-[0.95rem] font-semibold">Address</span>
+                <input
+                  name="address"
+                  required
+                  className={fieldClassName}
+                  placeholder="Coaching area, hostel, street, landmark"
+                />
+              </label>
+            </>
           ) : (
             <>
           <label className="grid gap-3 text-sm font-medium text-ink">

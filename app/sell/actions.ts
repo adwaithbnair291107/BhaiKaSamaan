@@ -18,11 +18,15 @@ export async function submitListing(formData: FormData) {
   const examName = requireValue(formData, "examName");
   const subcategory = requireValue(formData, "subcategory");
   const location = requireValue(formData, "location");
+  const state = requireValue(formData, "state");
+  const district = requireValue(formData, "district");
+  const address = requireValue(formData, "address");
   const postedBy = requireValue(formData, "postedBy");
   const description = requireValue(formData, "description");
   const priceValue = requireValue(formData, "price");
   const isCompetitiveCategory = category === "Competitive Exam Books";
   const isCollegeAccessoriesCategory = category === "College Accessories";
+  const competitiveLocation = [address, district, state].filter(Boolean).join(", ");
 
   if (!title || !category || !postedBy || !description || !priceValue) {
     redirect("/sell?status=missing");
@@ -40,7 +44,7 @@ export async function submitListing(formData: FormData) {
     redirect("/sell?status=missing");
   }
 
-  if (isCompetitiveCategory && !location) {
+  if (isCompetitiveCategory && (!state || !district || !address)) {
     redirect("/sell?status=location");
   }
 
@@ -70,7 +74,7 @@ export async function submitListing(formData: FormData) {
     ? { slug: collegeSlug }
     : await ensureCollegeByName(
         isCompetitiveCategory ? "Competitive Exams" : collegeName,
-        isCompetitiveCategory ? location : collegeCity
+        isCompetitiveCategory ? district || state : collegeCity
       );
 
   const storedCategory = isCompetitiveCategory ? examName : isCollegeAccessoriesCategory ? subcategory : category;
@@ -85,7 +89,7 @@ export async function submitListing(formData: FormData) {
     branch: requireValue(formData, "branch") || undefined,
     year: requireValue(formData, "year") || undefined,
     condition: requireValue(formData, "condition") || undefined,
-    location: location || undefined,
+    location: isCompetitiveCategory ? competitiveLocation : location || undefined,
     image
   });
 
