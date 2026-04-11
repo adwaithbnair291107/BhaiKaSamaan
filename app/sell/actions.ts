@@ -284,8 +284,13 @@ export async function submitOffer(formData: FormData) {
     redirect(`/listings/${listingId}?offer=missing`);
   }
 
-  const listing = await getListing(listingId);
-  if (!listing) {
+  const { data: listing, error: listingError } = await supabase
+    .from("listings")
+    .select("id,min_price,status")
+    .eq("id", listingId)
+    .single();
+
+  if (listingError || !listing) {
     redirect("/");
   }
 
@@ -298,7 +303,7 @@ export async function submitOffer(formData: FormData) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
-  if (amount < listing.minPrice) {
+  if (amount < Number(listing.min_price ?? 0)) {
     redirect(`/listings/${listingId}?offer=low`);
   }
 
@@ -361,8 +366,13 @@ export async function sendOfferMessage(formData: FormData) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
-  const listing = await getListing(listingId);
-  if (!listing) {
+  const { data: listing, error: listingError } = await supabase
+    .from("listings")
+    .select("id,user_id,status,posted_by")
+    .eq("id", listingId)
+    .single();
+
+  if (listingError || !listing) {
     redirect("/");
   }
 
@@ -377,7 +387,7 @@ export async function sendOfferMessage(formData: FormData) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
-  const isSeller = listing.userId === user.id;
+  const isSeller = listing.user_id === user.id;
   const isBuyer = offer.buyer_user_id === user.id;
   if ((senderRole === "seller" && !isSeller) || (senderRole === "buyer" && !isBuyer)) {
     redirect(`/listings/${listingId}?offer=invalid`);
