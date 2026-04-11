@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GlobalClickLoader } from "@/components/global-click-loader";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
@@ -15,6 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        <GlobalClickLoader />
         {children}
         <SiteFooter />
       </body>
