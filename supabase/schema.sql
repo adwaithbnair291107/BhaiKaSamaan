@@ -10,7 +10,6 @@ create table if not exists public.colleges (
 create table if not exists public.listings (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
-  status text not null default 'active',
   college_slug text not null references public.colleges(slug) on delete cascade,
   title text not null,
   branch text,
@@ -24,18 +23,13 @@ create table if not exists public.listings (
   posted_by text not null,
   description text not null,
   image text,
-  sold_at timestamptz,
-  sold_delete_at timestamptz,
   created_at timestamptz not null default now()
 );
 
 alter table public.listings add column if not exists user_id uuid references auth.users(id) on delete set null;
-alter table public.listings add column if not exists status text not null default 'active';
 alter table public.listings add column if not exists min_price numeric(10, 2);
 alter table public.listings add column if not exists expected_price numeric(10, 2);
 alter table public.listings add column if not exists price numeric(10, 2);
-alter table public.listings add column if not exists sold_at timestamptz;
-alter table public.listings add column if not exists sold_delete_at timestamptz;
 
 update public.listings
 set
@@ -54,7 +48,7 @@ create table if not exists public.offers (
   buyer_contact text,
   amount numeric(10, 2) not null check (amount > 0),
   message text,
-  status text not null default 'open',
+  status text not null default 'pending',
   created_at timestamptz not null default now()
 );
 
@@ -88,18 +82,6 @@ begin
     select 1 from pg_constraint where conname = 'listings_expected_gte_min'
   ) then
     alter table public.listings add constraint listings_expected_gte_min check (expected_price >= min_price);
-  end if;
-
-  if not exists (
-    select 1 from pg_constraint where conname = 'listings_status_valid'
-  ) then
-    alter table public.listings add constraint listings_status_valid check (status in ('active', 'sold'));
-  end if;
-
-  if not exists (
-    select 1 from pg_constraint where conname = 'offers_status_valid'
-  ) then
-    alter table public.offers add constraint offers_status_valid check (status in ('open', 'closed', 'confirmed'));
   end if;
 end $$;
 

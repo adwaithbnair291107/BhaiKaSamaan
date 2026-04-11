@@ -8,7 +8,6 @@ export type Listing = {
   collegeSlug: string;
   collegeName: string;
   userId?: string | null;
-  status: "active" | "sold";
   branch?: string | null;
   year?: string | null;
   category: string;
@@ -17,8 +16,6 @@ export type Listing = {
   minPrice: number;
   city: string;
   location?: string | null;
-  soldAt?: string | null;
-  soldDeleteAt?: string | null;
   postedBy: string;
   postedAgo: string;
   description: string;
@@ -79,7 +76,6 @@ type ListingCollegeRelation = {
 type ListingRow = {
   id: string;
   user_id?: string | null;
-  status?: string | null;
   college_slug: string;
   title: string;
   branch: string | null;
@@ -93,8 +89,6 @@ type ListingRow = {
   posted_by: string;
   description: string;
   image: string | null;
-  sold_at?: string | null;
-  sold_delete_at?: string | null;
   created_at: string;
   colleges?: ListingCollegeRelation | ListingCollegeRelation[];
 };
@@ -283,26 +277,6 @@ function isCollegeListingVisibleForCollegeFeed(row: ListingRow) {
   return !isCompetitiveListingCategory(row.category);
 }
 
-function isActiveListing(row: ListingRow) {
-  return row.status !== "sold";
-}
-
-async function cleanupExpiredSoldListings() {
-  try {
-    await querySupabase(
-      `listings?status=eq.sold&sold_delete_at=not.is.null&sold_delete_at=lte.${encodeURIComponent(new Date().toISOString())}`,
-      {
-        method: "DELETE",
-        headers: {
-          Prefer: "return=minimal"
-        }
-      }
-    );
-  } catch (error) {
-    console.error("Failed to cleanup expired sold listings", error);
-  }
-}
-
 function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): Listing {
   const college = getListingCollege(row, collegesBySlug);
   const images = parseListingImages(row.image);
@@ -313,7 +287,6 @@ function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): 
     collegeSlug: row.college_slug,
     collegeName: college?.name ?? "Unknown College",
     userId: row.user_id ?? null,
-    status: row.status === "sold" ? "sold" : "active",
     branch: row.branch ?? undefined,
     year: row.year ?? undefined,
     category: row.category,
@@ -322,8 +295,6 @@ function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): 
     expectedPrice: Number(row.expected_price ?? row.price ?? 0),
     city: college?.city ?? "Unknown City",
     location: row.location,
-    soldAt: row.sold_at ?? null,
-    soldDeleteAt: row.sold_delete_at ?? null,
     postedBy: row.posted_by,
     postedAgo: formatPostedAgo(row.created_at),
     description: row.description,
@@ -338,20 +309,18 @@ export async function getColleges(): Promise<College[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const [collegeRows, listingRows] = await Promise.all([
     querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description&order=name.asc", {
       next: { revalidate: 60 }
     }),
-    querySupabase<ListingRow[]>("listings?select=*,colleges(name,city)&order=created_at.desc", {
+    querySupabase<ListingRow[]>("listings?select=id,college_slug", {
       next: { revalidate: 60 }
     })
   ]);
 
   const counts = new Map<string, number>();
   for (const listing of listingRows) {
-    if (!isCollegeListingVisibleForCollegeFeed(listing) || !isActiveListing(listing)) {
+    if (!isCollegeListingVisibleForCollegeFeed(listing)) {
       continue;
     }
 
@@ -373,8 +342,6 @@ export async function getCollege(slug: string): Promise<College | null> {
     return null;
   }
 
-  await cleanupExpiredSoldListings();
-
   const [collegeRows, listingRows] = await Promise.all([
     querySupabase<CollegeRow[]>(
       `colleges?select=slug,name,city,description&slug=eq.${encodeURIComponent(slug)}&limit=1`,
@@ -383,7 +350,7 @@ export async function getCollege(slug: string): Promise<College | null> {
       }
     ),
     querySupabase<ListingRow[]>(
-      `listings?select=*&college_slug=eq.${encodeURIComponent(slug)}`,
+      `listings?select=id&college_slug=eq.${encodeURIComponent(slug)}`,
       {
         next: { revalidate: 60 }
       }
@@ -400,7 +367,7 @@ export async function getCollege(slug: string): Promise<College | null> {
     name: college.name,
     city: college.city,
     description: college.description ?? "Local resale hub for this campus.",
-    activeListings: listingRows.filter((row) => isCollegeListingVisibleForCollegeFeed(row) && isActiveListing(row)).length
+    activeListings: listingRows.filter(isCollegeListingVisibleForCollegeFeed).length
   };
 }
 
@@ -488,10 +455,8 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
-    `listings?select=*,colleges(name,city)&college_slug=eq.${encodeURIComponent(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&college_slug=eq.${encodeURIComponent(
       slug
     )}&order=created_at.desc`,
     {
@@ -499,7 +464,7 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
     }
   );
 
-  return listingRows.filter((listing) => isCollegeListingVisibleForCollegeFeed(listing) && isActiveListing(listing)).map((listing) => mapListing(listing));
+  return listingRows.filter(isCollegeListingVisibleForCollegeFeed).map((listing) => mapListing(listing));
 }
 
 export async function getListingsByCategoryBrowse(
@@ -510,8 +475,6 @@ export async function getListingsByCategoryBrowse(
   if (!config) {
     return [];
   }
-
-  await cleanupExpiredSoldListings();
 
   const categoryConfig = categoryBrowseConfig[slug];
   const allowedSubdivisions = subdivision
@@ -528,13 +491,13 @@ export async function getListingsByCategoryBrowse(
   const encodedCategoryFilter = encodeURIComponent(`(${serializedCategories})`);
 
   const listingRows = await querySupabase<ListingRow[]>(
-    `listings?select=*,colleges(name,city)&category=in.${encodedCategoryFilter}&order=created_at.desc`,
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&category=in.${encodedCategoryFilter}&order=created_at.desc`,
     {
       next: { revalidate: 60 }
     }
   );
 
-  return listingRows.filter(isActiveListing).map((listing) => mapListing(listing));
+  return listingRows.map((listing) => mapListing(listing));
 }
 
 export async function getListingsByUser(userId: string): Promise<Listing[]> {
@@ -543,10 +506,8 @@ export async function getListingsByUser(userId: string): Promise<Listing[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
-    `listings?select=*,colleges(name,city)&user_id=eq.${encodeURIComponent(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&user_id=eq.${encodeURIComponent(
       userId
     )}&order=created_at.desc`
   );
@@ -560,18 +521,14 @@ export async function getRecentListings(limit = 6): Promise<Listing[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
-  const queryLimit = Math.max(limit * 3, 18);
-
   const listingRows = await querySupabase<ListingRow[]>(
-    `listings?select=*,colleges(name,city)&order=created_at.desc&limit=${queryLimit}`,
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&order=created_at.desc&limit=${limit}`,
     {
       next: { revalidate: 60 }
     }
   );
 
-  return listingRows.filter(isActiveListing).slice(0, limit).map((listing) => mapListing(listing));
+  return listingRows.map((listing) => mapListing(listing));
 }
 
 export async function getListing(id: string): Promise<Listing | null> {
@@ -580,10 +537,8 @@ export async function getListing(id: string): Promise<Listing | null> {
     return null;
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
-    `listings?select=*,colleges(name,city)&id=eq.${encodeURIComponent(
+    `listings?select=id,user_id,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,created_at,colleges(name,city)&id=eq.${encodeURIComponent(
       id
     )}&limit=1`
   );
@@ -758,7 +713,7 @@ export async function createOffer(input: CreateOfferInput): Promise<string> {
         buyer_contact: input.buyerContact || null,
         amount: input.amount,
         message: input.message || null,
-        status: "open"
+        status: "pending"
       }
     ])
   });

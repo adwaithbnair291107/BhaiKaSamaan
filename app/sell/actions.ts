@@ -289,10 +289,6 @@ export async function submitOffer(formData: FormData) {
     redirect("/");
   }
 
-  if (listing.status === "sold") {
-    redirect(`/listings/${listingId}?offer=closed`);
-  }
-
   const amount = Number(amountValue);
   if (Number.isNaN(amount) || amount <= 0) {
     redirect(`/listings/${listingId}?offer=invalid`);
@@ -384,7 +380,7 @@ export async function sendOfferMessage(formData: FormData) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
-  if (offer.status !== "open") {
+  if (offer.status === "closed") {
     redirect(`/listings/${listingId}?offer=closed`);
   }
 
@@ -412,7 +408,6 @@ export async function closeOfferConversation(formData: FormData) {
 
   const listingId = requireValue(formData, "listingId");
   const offerId = requireValue(formData, "offerId");
-  const resolution = requireValue(formData, "resolution");
 
   if (!listingId) {
     redirect("/");
@@ -438,22 +433,10 @@ export async function closeOfferConversation(formData: FormData) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
-  const systemMessagesByResolution: Record<string, string> = {
-    close_only: "This conversation was closed by the seller. The deal was not confirmed.",
-    confirm_keep_open: "The seller confirmed this deal and closed the conversation. The listing is still open for now.",
-    confirm_and_sell: "The seller confirmed this deal and marked the listing as sold."
-  };
-
-  const nextOfferStatus = resolution === "confirm_keep_open" || resolution === "confirm_and_sell" ? "confirmed" : "closed";
-
-  if (!resolution || !(resolution in systemMessagesByResolution)) {
-    redirect(`/listings/${listingId}?offer=invalid`);
-  }
-
-  if (offer.status === "open") {
+  if (offer.status !== "closed") {
     const { error: closeError } = await supabase
       .from("offers")
-      .update({ status: nextOfferStatus })
+      .update({ status: "closed" })
       .eq("id", offerId)
       .eq("listing_id", listingId);
 
@@ -466,7 +449,7 @@ export async function closeOfferConversation(formData: FormData) {
       sender_user_id: user.id,
       sender_role: "system",
       sender_name: listing.postedBy,
-      body: systemMessagesByResolution[resolution]
+      body: "This conversation was closed by the seller."
     });
 
     if (systemMessageError) {
@@ -474,41 +457,8 @@ export async function closeOfferConversation(formData: FormData) {
     }
   }
 
-  if (resolution === "confirm_and_sell" && listing.status !== "sold") {
-    const soldAt = new Date();
-    const soldDeleteAt = new Date(soldAt.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-    const { error: listingUpdateError } = await supabase
-      .from("listings")
-      .update({
-        status: "sold",
-        sold_at: soldAt.toISOString(),
-        sold_delete_at: soldDeleteAt.toISOString()
-      })
-      .eq("id", listingId)
-      .eq("user_id", user.id);
-
-    if (listingUpdateError) {
-      throw listingUpdateError;
-    }
-
-    const { error: closeOtherOffersError } = await supabase
-      .from("offers")
-      .update({ status: "closed" })
-      .eq("listing_id", listingId)
-      .neq("id", offerId)
-      .eq("status", "open");
-
-    if (closeOtherOffersError) {
-      throw closeOtherOffersError;
-    }
-  }
-
-  revalidatePath("/");
-  revalidatePath("/sell");
-  revalidatePath(`/college/${listing.collegeSlug}`);
   revalidatePath(`/listings/${listingId}`);
-  redirect(`/listings/${listingId}?offer=${resolution === "confirm_and_sell" ? "sold" : nextOfferStatus}`);
+  redirect(`/listings/${listingId}?offer=closed`);
 }
 
 export async function deleteOfferConversation(formData: FormData) {
