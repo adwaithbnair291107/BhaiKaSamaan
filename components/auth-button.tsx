@@ -61,7 +61,6 @@ export function AuthButton({ isSignedIn, userLabel }: AuthButtonProps) {
           className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 bg-mist text-sm font-semibold text-ink transition hover:bg-white"
         >
           {badgeLabel}
-        >
         </button>
 
         {isMenuOpen ? (
