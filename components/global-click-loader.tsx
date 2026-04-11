@@ -9,6 +9,14 @@ export function GlobalClickLoader() {
   const [active, setActive] = useState(false);
 
   useEffect(() => {
+    document.body.dataset.routeLoading = active ? "true" : "false";
+
+    return () => {
+      document.body.dataset.routeLoading = "false";
+    };
+  }, [active]);
+
+  useEffect(() => {
     setActive(false);
   }, [pathname, searchParams]);
 

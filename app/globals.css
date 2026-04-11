@@ -13,6 +13,15 @@ body {
     radial-gradient(circle at bottom right, rgba(93, 122, 99, 0.18), transparent 22%);
 }
 
+.site-footer {
+  transition: opacity 180ms ease;
+}
+
+body[data-route-loading="true"] .site-footer {
+  opacity: 0;
+  pointer-events: none;
+}
+
 a {
   @apply transition-colors;
 }

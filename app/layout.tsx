@@ -16,11 +16,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
+      <body className="min-h-screen">
         <Suspense fallback={null}>
           <GlobalClickLoader />
         </Suspense>
-        {children}
+        <div className="min-h-screen">{children}</div>
         <SiteFooter />
       </body>
     </html>
