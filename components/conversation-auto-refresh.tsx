@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { startTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 type ConversationAutoRefreshProps = {
@@ -21,11 +21,34 @@ export function ConversationAutoRefresh({
 
     const intervalId = window.setInterval(() => {
       if (document.visibilityState === "visible") {
-        router.refresh();
+        startTransition(() => {
+          router.refresh();
+        });
       }
     }, intervalMs);
 
-    return () => window.clearInterval(intervalId);
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        startTransition(() => {
+          router.refresh();
+        });
+      }
+    };
+
+    const handleFocus = () => {
+      startTransition(() => {
+        router.refresh();
+      });
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [enabled, intervalMs, router]);
 
   return null;
