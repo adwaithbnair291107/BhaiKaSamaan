@@ -1,14 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import {
-  closeOfferConversation,
-  deleteListing,
-  deleteOfferConversation,
-  saveListingChanges,
-  sendOfferMessage,
-  submitOffer
-} from "@/app/sell/actions";
+import { closeOfferConversation, deleteListing, deleteOfferConversation, saveListingChanges, submitOffer } from "@/app/sell/actions";
 import { AuthButton } from "@/components/auth-button";
+import { ConversationMessageForm } from "@/components/conversation-message-form";
 import { FormSubmitButton } from "@/components/form-submit-button";
 import { ListingImageGallery } from "@/components/listing-image-gallery";
 import {
@@ -377,24 +371,14 @@ export function ListingDetailView({
                   </div>
 
                   {thread.status === "open" ? (
-                    <form action={sendOfferMessage} className="mt-4 grid gap-3">
-                      <input type="hidden" name="listingId" value={listing.id} />
-                      <input type="hidden" name="offerId" value={thread.id} />
-                      <input type="hidden" name="senderRole" value="seller" />
-                      <input type="hidden" name="senderName" value={listing.postedBy} />
-                      <textarea
-                        name="body"
-                        rows={3}
-                        required
-                        className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
-                        placeholder="Reply to this buyer"
-                      />
-                      <FormSubmitButton
-                        idleLabel="Send reply"
-                        pendingLabel="Sending..."
-                        className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
-                      />
-                    </form>
+                    <ConversationMessageForm
+                      listingId={listing.id}
+                      offerId={thread.id}
+                      senderRole="seller"
+                      senderName={listing.postedBy}
+                      placeholder="Reply to this buyer"
+                      buttonLabel="Send reply"
+                    />
                   ) : (
                     <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
                       This conversation is closed. The buyer can still read the thread, and you can delete it anytime if you no longer need it.
@@ -440,24 +424,14 @@ export function ListingDetailView({
                 </div>
 
                 {thread.status === "open" ? (
-                  <form action={sendOfferMessage} className="mt-4 grid gap-3">
-                    <input type="hidden" name="listingId" value={listing.id} />
-                    <input type="hidden" name="offerId" value={thread.id} />
-                    <input type="hidden" name="senderRole" value="buyer" />
-                    <input type="hidden" name="senderName" value={userName || userEmail || thread.buyerName} />
-                    <textarea
-                      name="body"
-                      rows={3}
-                      required
-                      className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
-                      placeholder="Send a message to the seller"
-                    />
-                    <FormSubmitButton
-                      idleLabel="Send message"
-                      pendingLabel="Sending..."
-                      className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
-                    />
-                  </form>
+                  <ConversationMessageForm
+                    listingId={listing.id}
+                    offerId={thread.id}
+                    senderRole="buyer"
+                    senderName={userName || userEmail || thread.buyerName}
+                    placeholder="Send a message to the seller"
+                    buttonLabel="Send message"
+                  />
                 ) : (
                   <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
                     This conversation was closed by the seller.
