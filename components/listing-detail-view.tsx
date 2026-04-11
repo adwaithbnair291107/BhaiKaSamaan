@@ -9,6 +9,7 @@ import {
   submitOffer
 } from "@/app/sell/actions";
 import { AuthButton } from "@/components/auth-button";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { ListingImageGallery } from "@/components/listing-image-gallery";
 import {
   COMPETITIVE_EXAMS_LABEL,
@@ -229,9 +230,11 @@ export function ListingDetailView({
                 />
               </label>
 
-              <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                Send Offer
-              </button>
+              <FormSubmitButton
+                idleLabel="Send Offer"
+                pendingLabel="Sending..."
+                className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
+              />
             </form>
           ) : (
             <div className="mt-6 rounded-[24px] border border-dashed border-ink/15 bg-[#f7f1e3] p-5">
@@ -668,9 +671,11 @@ export function ListingDetailView({
             </label>
 
             <div className="flex flex-wrap gap-3">
-              <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                Save Changes
-              </button>
+              <FormSubmitButton
+                idleLabel="Save Changes"
+                pendingLabel="Saving..."
+                className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
+              />
             </div>
           </form>
 
