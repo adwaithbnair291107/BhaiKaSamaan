@@ -419,8 +419,9 @@ export async function sendOfferMessage(formData: FormData) {
 export async function closeOfferConversation(formData: FormData) {
   const supabase = createClient();
   const {
-    data: { user }
-  } = await supabase.auth.getUser();
+    data: { session }
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   const listingId = requireValue(formData, "listingId");
   const offerId = requireValue(formData, "offerId");
@@ -434,8 +435,13 @@ export async function closeOfferConversation(formData: FormData) {
     redirect(`/listings/${listingId}?offer=auth`);
   }
 
-  const listing = await getListing(listingId);
-  if (!listing || listing.userId !== user.id) {
+  const { data: listing, error: listingError } = await supabase
+    .from("listings")
+    .select("id,user_id,college_slug,posted_by,status")
+    .eq("id", listingId)
+    .single();
+
+  if (listingError || !listing || listing.user_id !== user.id) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
@@ -462,7 +468,7 @@ export async function closeOfferConversation(formData: FormData) {
     redirect(`/listings/${listingId}?offer=invalid`);
   }
 
-  if (offer.status === "open") {
+  if (offer.status !== nextOfferStatus) {
     const { error: closeError } = await supabase
       .from("offers")
       .update({ status: nextOfferStatus })
@@ -478,7 +484,7 @@ export async function closeOfferConversation(formData: FormData) {
       offer_id: offerId,
       sender_user_id: user.id,
       sender_role: "system",
-      sender_name: listing.postedBy,
+      sender_name: listing.posted_by,
       body: systemMessagesByResolution[resolution]
     });
 
@@ -517,11 +523,7 @@ export async function closeOfferConversation(formData: FormData) {
     }
   }
 
-  revalidatePath("/");
-  revalidatePath("/sell");
-  revalidatePath(`/college/${listing.collegeSlug}`);
-  revalidatePath(`/listings/${listingId}`);
-  redirect(`/listings/${listingId}?offer=${resolution === "confirm_and_sell" ? "sold" : nextOfferStatus}`);
+  redirect(`/listings/${listingId}?offer=${resolution === "confirm_and_sell" ? "sold" : nextOfferStatus}&t=${Date.now()}`);
 }
 
 export async function deleteOfferConversation(formData: FormData) {
