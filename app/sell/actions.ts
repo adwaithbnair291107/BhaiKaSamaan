@@ -334,7 +334,7 @@ export async function submitOffer(formData: FormData) {
     }
   }
 
-  redirect(`/listings/${listingId}?offer=sent`);
+  redirect(`/listings/${listingId}?offer=sent&t=${Date.now()}`);
 }
 
 export async function sendOfferMessage(formData: FormData) {
@@ -399,7 +399,7 @@ export async function sendOfferMessage(formData: FormData) {
     throw messageError;
   }
 
-  redirect(`/listings/${listingId}?offer=sent`);
+  redirect(`/listings/${listingId}?offer=sent&t=${Date.now()}`);
 }
 
 export async function closeOfferConversation(formData: FormData) {
