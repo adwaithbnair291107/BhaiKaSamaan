@@ -334,7 +334,6 @@ export async function submitOffer(formData: FormData) {
     }
   }
 
-  revalidatePath(`/listings/${listingId}`);
   redirect(`/listings/${listingId}?offer=sent`);
 }
 
@@ -400,7 +399,6 @@ export async function sendOfferMessage(formData: FormData) {
     throw messageError;
   }
 
-  revalidatePath(`/listings/${listingId}`);
   redirect(`/listings/${listingId}?offer=sent`);
 }
 
