@@ -40,21 +40,32 @@ export async function SiteFooter() {
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
           <div className="grid gap-6">
-            <div className="min-h-[118px] rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
+            <div className="min-h-[110px] rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
               <h3 className="font-display text-2xl">Adwaith B Nair</h3>
-              <div className="mt-4 space-y-3 text-sm">
+              <div className="mt-3 text-sm">
                 <p>
                   <span className="font-semibold text-sky-100">College:</span> To be updated
                 </p>
               </div>
             </div>
 
-            <div className="min-h-[118px] rounded-3xl bg-white/10 p-6 backdrop-blur-sm">
-              <h3 className="font-display text-2xl">J M Kamalashewar</h3>
-              <div className="mt-4 space-y-3 text-sm">
-                <p>
-                  <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
-                </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="min-h-[110px] rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
+                <h3 className="font-display text-2xl">J M Kamalashewar</h3>
+                <div className="mt-3 text-sm">
+                  <p>
+                    <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
+                  </p>
+                </div>
+              </div>
+
+              <div className="min-h-[110px] rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
+                <h3 className="font-display text-2xl">Aneek Singh</h3>
+                <div className="mt-3 text-sm">
+                  <p>
+                    <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
+                  </p>
+                </div>
               </div>
             </div>
           </div>
