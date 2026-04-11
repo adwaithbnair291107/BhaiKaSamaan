@@ -10,7 +10,7 @@ export async function SiteHeader() {
 
   return (
     <header className="border-b border-ink/10 bg-white/70 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
         <Link href="/" className="font-display text-2xl font-semibold tracking-tight text-ink">
           BhaiKaSamaan
         </Link>

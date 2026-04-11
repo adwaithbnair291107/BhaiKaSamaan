@@ -64,14 +64,20 @@ export function AuthButton({ isSignedIn, userLabel }: AuthButtonProps) {
         </button>
 
         {isMenuOpen ? (
-          <div className="absolute right-0 top-12 z-20 min-w-[220px] rounded-[22px] border border-ink/10 bg-white p-3 shadow-card">
-            <p className="px-3 py-2 text-sm text-ink/65">{userLabel}</p>
+          <div className="absolute right-0 top-12 z-20 min-w-[260px] overflow-hidden rounded-[24px] border border-ink/10 bg-white shadow-[0_22px_50px_rgba(26,35,32,0.16)]">
+            <div className="border-b border-ink/8 bg-mist/80 px-4 py-3">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-moss">Signed in as</p>
+              <p className="mt-2 break-all text-sm font-medium text-ink/78">{userLabel}</p>
+            </div>
             <button
               type="button"
               onClick={handleSignOut}
-              className="mt-1 w-full rounded-2xl px-3 py-2 text-left text-sm font-medium text-ink transition hover:bg-mist"
+              className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-ink transition hover:bg-[#f7f1e3]"
             >
               Sign Out
+              <span aria-hidden="true" className="text-ink/35">
+                →
+              </span>
             </button>
           </div>
         ) : null}
