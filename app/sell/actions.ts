@@ -267,8 +267,9 @@ export async function submitListing(formData: FormData) {
 export async function submitOffer(formData: FormData) {
   const supabase = createClient();
   const {
-    data: { user }
-  } = await supabase.auth.getUser();
+    data: { session }
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   const listingId = requireValue(formData, "listingId");
   const buyerName = requireValue(formData, "buyerName");
@@ -345,8 +346,9 @@ export async function submitOffer(formData: FormData) {
 export async function sendOfferMessage(formData: FormData) {
   const supabase = createClient();
   const {
-    data: { user }
-  } = await supabase.auth.getUser();
+    data: { session }
+  } = await supabase.auth.getSession();
+  const user = session?.user;
 
   const listingId = requireValue(formData, "listingId");
   const offerId = requireValue(formData, "offerId");
