@@ -41,8 +41,8 @@ export async function SiteFooter() {
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
           <div className="grid gap-6">
             <div className="min-h-[110px] rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
-              <h3 className="font-display text-2xl">Adwaith B Nair</h3>
-              <div className="mt-3 text-sm">
+              <h3 className="font-display text-3xl">Adwaith B Nair</h3>
+              <div className="mt-3 text-base">
                 <p>
                   <span className="font-semibold text-sky-100">College:</span> To be updated
                 </p>
@@ -51,8 +51,8 @@ export async function SiteFooter() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-h-[110px] rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
-                <h3 className="font-display text-2xl">J M Kamalashewar</h3>
-                <div className="mt-3 text-sm">
+                <h3 className="font-display text-3xl">J M Kamalashewar</h3>
+                <div className="mt-3 text-base">
                   <p>
                     <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
                   </p>
@@ -60,8 +60,8 @@ export async function SiteFooter() {
               </div>
 
               <div className="min-h-[110px] rounded-3xl bg-white/10 p-5 backdrop-blur-sm">
-                <h3 className="font-display text-2xl">Aneek Singh</h3>
-                <div className="mt-3 text-sm">
+                <h3 className="font-display text-3xl">Aneek Singh</h3>
+                <div className="mt-3 text-base">
                   <p>
                     <span className="font-semibold text-sky-100">College:</span> Lovely Professional University
                   </p>
