@@ -1,6 +1,7 @@
 import { deleteListing, submitListing } from "@/app/sell/actions";
 import { SellForm } from "@/app/sell/sell-form";
 import { AuthButton } from "@/components/auth-button";
+import { FormSubmitButton } from "@/components/form-submit-button";
 import { SiteHeader } from "@/components/site-header";
 import Link from "next/link";
 import { categories, getColleges, getListingsByUser } from "@/lib/data";
@@ -302,12 +303,11 @@ export default async function SellPage({ searchParams }: SellPageProps) {
                           </Link>
                           <form action={deleteListing}>
                             <input type="hidden" name="listingId" value={listing.id} />
-                            <button
-                              type="submit"
-                              className="rounded-full border border-clay/30 px-4 py-2 text-sm font-semibold text-clay transition hover:bg-clay/10"
-                            >
-                              Delete listing
-                            </button>
+                            <FormSubmitButton
+                              idleLabel="Delete listing"
+                              pendingLabel="Deleting..."
+                              className="rounded-full border border-clay/30 px-4 py-2 text-sm font-semibold text-clay transition hover:bg-clay/10 disabled:opacity-60"
+                            />
                           </form>
                         </div>
                       </div>

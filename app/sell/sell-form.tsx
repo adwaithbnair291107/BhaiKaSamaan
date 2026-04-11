@@ -7,6 +7,7 @@ import {
   indiaStatesWithDistricts,
   type College
 } from "@/lib/data";
+import { FormSubmitButton } from "@/components/form-submit-button";
 
 type SellFormProps = {
   colleges: College[];
@@ -477,12 +478,11 @@ export function SellForm({ colleges, categories, action }: SellFormProps) {
         </label>
       </section>
 
-      <button
-        type="submit"
-        className="w-full rounded-full bg-ink px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-moss sm:w-fit"
-      >
-        Post to marketplace
-      </button>
+      <FormSubmitButton
+        idleLabel="Post to marketplace"
+        pendingLabel="Posting..."
+        className="w-full rounded-full bg-ink px-6 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-moss disabled:opacity-60 sm:w-fit"
+      />
     </form>
   );
 }

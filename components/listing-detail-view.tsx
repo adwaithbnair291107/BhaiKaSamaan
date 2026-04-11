@@ -276,12 +276,11 @@ export function ListingDetailView({
                           <input type="hidden" name="listingId" value={listing.id} />
                           <input type="hidden" name="offerId" value={thread.id} />
                           <input type="hidden" name="resolution" value="close_only" />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-clay/30 hover:text-clay"
-                          >
-                            No, close conversation
-                          </button>
+                          <FormSubmitButton
+                            idleLabel="No, close conversation"
+                            pendingLabel="Closing..."
+                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-clay/30 hover:text-clay disabled:opacity-60"
+                          />
                         </form>
                         <Link
                           href={`/listings/${listing.id}`}
@@ -304,23 +303,21 @@ export function ListingDetailView({
                           <input type="hidden" name="listingId" value={listing.id} />
                           <input type="hidden" name="offerId" value={thread.id} />
                           <input type="hidden" name="resolution" value="confirm_and_sell" />
-                          <button
-                            type="submit"
-                            className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-moss"
-                          >
-                            Yes, close listing
-                          </button>
+                          <FormSubmitButton
+                            idleLabel="Yes, close listing"
+                            pendingLabel="Closing..."
+                            className="rounded-full bg-ink px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-moss disabled:opacity-60"
+                          />
                         </form>
                         <form action={closeOfferConversation}>
                           <input type="hidden" name="listingId" value={listing.id} />
                           <input type="hidden" name="offerId" value={thread.id} />
                           <input type="hidden" name="resolution" value="confirm_keep_open" />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-moss/40 hover:text-moss"
-                          >
-                            Not yet
-                          </button>
+                          <FormSubmitButton
+                            idleLabel="Not yet"
+                            pendingLabel="Saving..."
+                            className="rounded-full border border-ink/15 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition hover:border-moss/40 hover:text-moss disabled:opacity-60"
+                          />
                         </form>
                         <Link
                           href={`/listings/${listing.id}`}
@@ -355,12 +352,11 @@ export function ListingDetailView({
                       <form action={deleteOfferConversation}>
                         <input type="hidden" name="listingId" value={listing.id} />
                         <input type="hidden" name="offerId" value={thread.id} />
-                        <button
-                          type="submit"
-                          className="rounded-full border border-clay/30 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-clay transition hover:bg-clay/10"
-                        >
-                          Delete conversation
-                        </button>
+                        <FormSubmitButton
+                          idleLabel="Delete conversation"
+                          pendingLabel="Deleting..."
+                          className="rounded-full border border-clay/30 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-clay transition hover:bg-clay/10 disabled:opacity-60"
+                        />
                       </form>
                     </div>
                   </div>
@@ -393,9 +389,11 @@ export function ListingDetailView({
                         className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
                         placeholder="Reply to this buyer"
                       />
-                      <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                        Send reply
-                      </button>
+                      <FormSubmitButton
+                        idleLabel="Send reply"
+                        pendingLabel="Sending..."
+                        className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
+                      />
                     </form>
                   ) : (
                     <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
@@ -454,9 +452,11 @@ export function ListingDetailView({
                       className="rounded-[22px] border border-ink/10 bg-[#f7f1e3] px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10"
                       placeholder="Send a message to the seller"
                     />
-                    <button className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss">
-                      Send message
-                    </button>
+                    <FormSubmitButton
+                      idleLabel="Send message"
+                      pendingLabel="Sending..."
+                      className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
+                    />
                   </form>
                 ) : (
                   <div className="mt-4 rounded-[22px] bg-white px-4 py-3 text-sm text-ink/65">
@@ -681,12 +681,11 @@ export function ListingDetailView({
 
           <form action={deleteListing} className="mt-4">
             <input type="hidden" name="listingId" value={listing.id} />
-            <button
-              type="submit"
-              className="rounded-full border border-clay/30 px-5 py-3 text-sm font-semibold text-clay transition hover:bg-clay/10"
-            >
-              Delete Listing
-            </button>
+            <FormSubmitButton
+              idleLabel="Delete Listing"
+              pendingLabel="Deleting..."
+              className="rounded-full border border-clay/30 px-5 py-3 text-sm font-semibold text-clay transition hover:bg-clay/10 disabled:opacity-60"
+            />
           </form>
         </section>
       ) : null}
