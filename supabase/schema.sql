@@ -63,12 +63,15 @@ alter table public.offers add column if not exists buyer_user_id uuid references
 create table if not exists public.offer_messages (
   id uuid primary key default gen_random_uuid(),
   offer_id uuid not null references public.offers(id) on delete cascade,
+  listing_id uuid references public.listings(id) on delete cascade,
   sender_user_id uuid references auth.users(id) on delete set null,
   sender_role text not null check (sender_role in ('buyer', 'seller', 'system')),
   sender_name text not null,
   body text not null,
   created_at timestamptz not null default now()
 );
+
+alter table public.offer_messages add column if not exists listing_id uuid references public.listings(id) on delete cascade;
 
 do $$
 begin

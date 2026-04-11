@@ -328,6 +328,7 @@ export async function submitOffer(formData: FormData) {
 
   if (message) {
     const { error: messageError } = await supabase.from("offer_messages").insert({
+      listing_id: listingId,
       offer_id: createdOffer.id,
       sender_user_id: user.id,
       sender_role: "buyer",
@@ -400,6 +401,7 @@ export async function sendOfferMessage(formData: FormData) {
   }
 
   const { error: messageError } = await supabase.from("offer_messages").insert({
+    listing_id: listingId,
     offer_id: offerId,
     sender_user_id: user.id,
     sender_role: senderRole,
@@ -472,6 +474,7 @@ export async function closeOfferConversation(formData: FormData) {
     }
 
     const { error: systemMessageError } = await supabase.from("offer_messages").insert({
+      listing_id: listingId,
       offer_id: offerId,
       sender_user_id: user.id,
       sender_role: "system",

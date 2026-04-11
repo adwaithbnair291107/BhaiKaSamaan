@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ConversationAutoRefresh } from "@/components/conversation-auto-refresh";
+import { ConversationRealtime } from "@/components/conversation-realtime";
 import { ListingDetailView } from "@/components/listing-detail-view";
 import { SiteHeader } from "@/components/site-header";
 import { getListing, getOfferThreadsByListing, getOfferThreadsForBuyer } from "@/lib/data";
@@ -44,6 +45,7 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
 
       <main className="mx-auto max-w-6xl px-6 py-10">
         <ConversationAutoRefresh enabled={shouldAutoRefreshConversations} intervalMs={1500} />
+        <ConversationRealtime listingId={listing.id} enabled={shouldAutoRefreshConversations} />
         <ListingDetailView
           listing={listing}
           offerStatus={offerStatus}
