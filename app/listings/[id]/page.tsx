@@ -12,6 +12,8 @@ type PageProps = {
   searchParams?: {
     offer?: string;
     manage?: string;
+    thread?: string;
+    step?: string;
   };
 };
 
@@ -29,10 +31,12 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
 
   const offerStatus = searchParams?.offer;
   const manageStatus = searchParams?.manage;
+  const activeOfferId = searchParams?.thread;
+  const activeOfferStep = searchParams?.step;
   const canManageListing = Boolean(user && listing.userId === user.id);
   const buyerThreads = user && !canManageListing ? await getOfferThreadsForBuyer(params.id, user.id) : [];
   const sellerThreads = canManageListing ? await getOfferThreadsByListing(params.id) : [];
-  const shouldAutoRefreshConversations = sellerThreads.length > 0 || buyerThreads.length > 0;
+  const shouldAutoRefreshConversations = canManageListing || sellerThreads.length > 0 || buyerThreads.length > 0;
 
   return (
     <div className="min-h-screen">
@@ -44,6 +48,8 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
           listing={listing}
           offerStatus={offerStatus}
           manageStatus={manageStatus}
+          activeOfferId={activeOfferId}
+          activeOfferStep={activeOfferStep}
           canManageListing={canManageListing}
           userName={user?.user_metadata?.full_name}
           userEmail={user?.email}
