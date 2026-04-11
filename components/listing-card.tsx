@@ -17,6 +17,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
     >
       <div className="relative h-52">
         <Image src={listing.image} alt={listing.title} fill className="object-cover" unoptimized={isDataUrl} />
+        {listing.status === "sold" ? (
+          <span className="absolute left-4 top-4 rounded-full bg-ink/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+            Closed
+          </span>
+        ) : null}
       </div>
       <div className="space-y-4 p-5">
         <div className="flex items-start justify-between gap-4">

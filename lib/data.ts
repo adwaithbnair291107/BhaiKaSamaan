@@ -576,6 +576,24 @@ export async function getRecentListings(limit = 6): Promise<Listing[]> {
   return listingRows.filter(isActiveListing).slice(0, limit).map((listing) => mapListing(listing));
 }
 
+export async function getClosedListings(limit = 6): Promise<Listing[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  await cleanupExpiredSoldListings();
+
+  const listingRows = await querySupabase<ListingRow[]>(
+    `listings?select=id,user_id,status,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,sold_at,sold_delete_at,created_at,colleges(name,city)&status=eq.sold&order=sold_at.desc&limit=${limit}`,
+    {
+      next: { revalidate: 60 }
+    }
+  );
+
+  return listingRows.map((listing) => mapListing(listing));
+}
+
 export async function getListing(id: string): Promise<Listing | null> {
   const config = getSupabaseConfig();
   if (!config) {

@@ -10,7 +10,7 @@ type ConversationAutoRefreshProps = {
 
 export function ConversationAutoRefresh({
   enabled,
-  intervalMs = 5000
+  intervalMs = 2000
 }: ConversationAutoRefreshProps) {
   const router = useRouter();
 
