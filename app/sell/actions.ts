@@ -632,7 +632,6 @@ export async function saveListingChanges(formData: FormData) {
       throw updateError;
     }
 
-    revalidatePath("/");
     revalidatePath(`/listings/${listingId}`);
     redirect(`/listings/${listingId}?manage=saved`);
   } catch (error) {
