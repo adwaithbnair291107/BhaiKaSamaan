@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GlobalClickLoader } from "@/components/global-click-loader";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "BhaiKaSamaan",
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <GlobalClickLoader />
+        <Suspense fallback={null}>
+          <GlobalClickLoader />
+        </Suspense>
         {children}
         <SiteFooter />
       </body>
