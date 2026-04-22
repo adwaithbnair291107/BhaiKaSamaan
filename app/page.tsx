@@ -27,8 +27,7 @@ export default async function HomePage() {
               A campus-first marketplace for buying and selling books with trusted student verification.
             </h2>
             <p className="mt-6 max-w-2xl text-lg text-white/78">
-              Students browse only relevant campus listings, check seller trust through reviews, and
-              buy from verified students with more confidence.
+              Starting with books, expanding to all student essentials.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
