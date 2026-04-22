@@ -11,6 +11,7 @@ import {
 import { AuthButton } from "@/components/auth-button";
 import { ConversationMessageForm } from "@/components/conversation-message-form";
 import { FormSubmitButton } from "@/components/form-submit-button";
+import { ListingBackButton } from "@/components/listing-back-button";
 import { ListingImageGallery } from "@/components/listing-image-gallery";
 import {
   COMPETITIVE_EXAMS_LABEL,
@@ -63,13 +64,12 @@ export function ListingDetailView({
   return (
     <>
       {isCompetitiveListing ? (
-        <Link href="/" className="text-sm font-semibold text-moss hover:text-ink">
-          {"<- Back to explore"}
-        </Link>
+        <ListingBackButton fallbackHref="/" label="<- Back to explore" />
       ) : (
-        <Link href={`/college/${listing.collegeSlug}`} className="text-sm font-semibold text-moss hover:text-ink">
-          {`<- Back to ${listing.collegeName}`}
-        </Link>
+        <ListingBackButton
+          fallbackHref={`/college/${listing.collegeSlug}`}
+          label={`<- Back to ${listing.collegeName}`}
+        />
       )}
 
       <section className="mt-6 grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">

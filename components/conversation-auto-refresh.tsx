@@ -19,13 +19,16 @@ export function ConversationAutoRefresh({
       return;
     }
 
-    const intervalId = window.setInterval(() => {
-      if (document.visibilityState === "visible") {
-        startTransition(() => {
-          router.refresh();
-        });
-      }
-    }, intervalMs);
+    const intervalId =
+      intervalMs > 0
+        ? window.setInterval(() => {
+            if (document.visibilityState === "visible") {
+              startTransition(() => {
+                router.refresh();
+              });
+            }
+          }, intervalMs)
+        : null;
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
@@ -45,7 +48,9 @@ export function ConversationAutoRefresh({
     document.addEventListener("visibilitychange", handleVisibility);
 
     return () => {
-      window.clearInterval(intervalId);
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleVisibility);
     };

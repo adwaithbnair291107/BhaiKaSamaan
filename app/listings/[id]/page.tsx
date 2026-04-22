@@ -21,11 +21,12 @@ type PageProps = {
 
 export default async function ListingDetailPage({ params, searchParams }: PageProps) {
   const supabase = createClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  const listing = await getListing(params.id);
+  const [
+    {
+      data: { user }
+    },
+    listing
+  ] = await Promise.all([supabase.auth.getUser(), getListing(params.id)]);
 
   if (!listing) {
     notFound();
@@ -37,20 +38,22 @@ export default async function ListingDetailPage({ params, searchParams }: PagePr
   const activeOfferStep = searchParams?.step;
   const reviewStatus = searchParams?.review;
   const canManageListing = Boolean(user && listing.userId === user.id);
-  const buyerThreads = user && !canManageListing ? await getOfferThreadsForBuyer(params.id, user.id) : [];
-  const sellerThreads = canManageListing ? await getOfferThreadsByListing(params.id) : [];
-  const sellerSnapshot = await getSellerSnapshot(listing.userId);
-  const canLeaveReview = user && !canManageListing && listing.userId
-    ? await canUserReviewListing(listing.id, listing.userId, user.id)
-    : false;
-  const shouldAutoRefreshConversations = Boolean(user);
+  const [buyerThreads, sellerThreads, sellerSnapshot, canLeaveReview] = await Promise.all([
+    user && !canManageListing ? getOfferThreadsForBuyer(params.id, user.id) : Promise.resolve([]),
+    canManageListing ? getOfferThreadsByListing(params.id) : Promise.resolve([]),
+    getSellerSnapshot(listing.userId),
+    user && !canManageListing && listing.userId
+      ? canUserReviewListing(listing.id, listing.userId, user.id)
+      : Promise.resolve(false)
+  ]);
+  const shouldAutoRefreshConversations = Boolean((canManageListing && sellerThreads.length > 0) || buyerThreads.length > 0);
 
   return (
     <div className="min-h-screen">
       <SiteHeader />
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        <ConversationAutoRefresh enabled={shouldAutoRefreshConversations} intervalMs={1500} />
+        <ConversationAutoRefresh enabled={shouldAutoRefreshConversations} intervalMs={0} />
         <ConversationRealtime listingId={listing.id} enabled={shouldAutoRefreshConversations} />
         <ListingDetailView
           listing={listing}
