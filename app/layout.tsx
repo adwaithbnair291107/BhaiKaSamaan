@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { GlobalClickLoader } from "@/components/global-click-loader";
-import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 import { Suspense } from "react";
 
@@ -21,7 +20,6 @@ export default function RootLayout({
           <GlobalClickLoader />
         </Suspense>
         <div className="min-h-screen">{children}</div>
-        <SiteFooter />
       </body>
     </html>
   );
