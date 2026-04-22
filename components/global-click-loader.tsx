@@ -47,7 +47,7 @@ export function GlobalClickLoader() {
         if (timeoutId) {
           window.clearTimeout(timeoutId);
         }
-        timeoutId = window.setTimeout(() => setActive(false), 8000);
+        timeoutId = window.setTimeout(() => setActive(false), 2000);
       }
     }
 

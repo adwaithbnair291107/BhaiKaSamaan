@@ -346,7 +346,7 @@ function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): 
     collegeName: college?.name ?? "Unknown College",
     userId: row.user_id ?? null,
     sellerVerified: false,
-    sellerVerificationLabel: "Verified Seller",
+    sellerVerificationLabel: "User Verified",
     status: row.status === "sold" ? "sold" : "active",
     branch: row.branch ?? undefined,
     year: row.year ?? undefined,
@@ -426,7 +426,10 @@ async function getSellerReviewSummaryMap(userIds: Array<string | null | undefine
   try {
     const encodedUserIds = encodeURIComponent(`(${uniqueUserIds.map((userId) => `"${userId}"`).join(",")})`);
     const reviewRows = await querySupabase<SellerReviewRow[]>(
-      `seller_reviews?select=id,listing_id,seller_user_id,reviewer_user_id,reviewer_name,rating,comment,created_at&seller_user_id=in.${encodedUserIds}&order=created_at.desc`
+      `seller_reviews?select=id,listing_id,seller_user_id,reviewer_user_id,reviewer_name,rating,comment,created_at&seller_user_id=in.${encodedUserIds}&order=created_at.desc`,
+      {
+        next: { revalidate: 60 }
+      }
     );
 
     const rowsBySeller = new Map<string, SellerReview[]>();
@@ -478,8 +481,6 @@ export async function getColleges(): Promise<College[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const [collegeRows, listingRows] = await Promise.all([
     querySupabase<CollegeRow[]>("colleges?select=slug,name,city,description&order=name.asc", {
       next: { revalidate: 60 }
@@ -512,8 +513,6 @@ export async function getCollege(slug: string): Promise<College | null> {
   if (!config) {
     return null;
   }
-
-  await cleanupExpiredSoldListings();
 
   const [collegeRows, listingRows] = await Promise.all([
     querySupabase<CollegeRow[]>(
@@ -628,8 +627,6 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
     `listings?select=id,user_id,status,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,sold_at,sold_delete_at,created_at,colleges(name,city)&college_slug=eq.${encodeURIComponent(
       slug
@@ -654,8 +651,6 @@ export async function getListingsByCategoryBrowse(
   if (!config) {
     return [];
   }
-
-  await cleanupExpiredSoldListings();
 
   const categoryConfig = categoryBrowseConfig[slug];
   const allowedSubdivisions = subdivision
@@ -688,8 +683,6 @@ export async function getListingsByUser(userId: string): Promise<Listing[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
     `listings?select=id,user_id,status,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,sold_at,sold_delete_at,created_at,colleges(name,city)&user_id=eq.${encodeURIComponent(
       userId
@@ -704,8 +697,6 @@ export async function getRecentListings(limit = 6): Promise<Listing[]> {
   if (!config) {
     return [];
   }
-
-  await cleanupExpiredSoldListings();
 
   const queryLimit = Math.max(limit * 3, 18);
 
@@ -726,8 +717,6 @@ export async function getClosedListings(limit = 6): Promise<Listing[]> {
     return [];
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
     `listings?select=id,user_id,status,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,sold_at,sold_delete_at,created_at,colleges(name,city)&status=eq.sold&order=sold_at.desc&limit=${limit}`,
     {
@@ -744,12 +733,13 @@ export async function getListing(id: string): Promise<Listing | null> {
     return null;
   }
 
-  await cleanupExpiredSoldListings();
-
   const listingRows = await querySupabase<ListingRow[]>(
     `listings?select=id,user_id,status,college_slug,title,branch,year,category,condition,price,min_price,expected_price,location,posted_by,description,image,sold_at,sold_delete_at,created_at,colleges(name,city)&id=eq.${encodeURIComponent(
       id
-    )}&limit=1`
+    )}&limit=1`,
+    {
+      next: { revalidate: 60 }
+    }
   );
 
   const listing = listingRows[0];
@@ -918,7 +908,10 @@ export async function getSellerSnapshot(userId?: string | null): Promise<SellerS
     const reviewRows = await querySupabase<SellerReviewRow[]>(
       `seller_reviews?select=id,listing_id,seller_user_id,reviewer_user_id,reviewer_name,rating,comment,created_at&seller_user_id=eq.${encodeURIComponent(
         userId
-      )}&order=created_at.desc`
+      )}&order=created_at.desc`,
+      {
+        next: { revalidate: 60 }
+      }
     );
     const reviews = reviewRows.map(mapSellerReview);
     const verification = deriveSellerVerification(reviews);
