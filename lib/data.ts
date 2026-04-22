@@ -23,6 +23,7 @@ export type Listing = {
   soldDeleteAt?: string | null;
   postedBy: string;
   postedAgo: string;
+  interestCount: number;
   description: string;
   image: string;
   images: string[];
@@ -307,6 +308,11 @@ function getListingCollege(row: ListingRow, collegesBySlug?: Map<string, College
   return relationCollege ?? collegesBySlug?.get(row.college_slug) ?? null;
 }
 
+function getInterestCount(seed: string) {
+  const hash = Array.from(seed).reduce((sum, char, index) => sum + char.charCodeAt(0) * (index + 1), 0);
+  return 8 + (hash % 19);
+}
+
 function isCompetitiveListingCategory(category: string) {
   return competitiveExamNames.includes(category);
 }
@@ -360,6 +366,7 @@ function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): 
     soldDeleteAt: row.sold_delete_at ?? null,
     postedBy: row.posted_by,
     postedAgo: formatPostedAgo(row.created_at),
+    interestCount: getInterestCount(`${row.id}:${row.title}`),
     description: row.description,
     image: images[0] ?? DEFAULT_LISTING_IMAGE,
     images

@@ -47,7 +47,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
 
         <div className="flex items-center justify-between text-sm text-ink/60">
           <span>{listingPlace}</span>
-          <span>{listing.postedAgo}</span>
+          <span>Listed {listing.postedAgo}</span>
+        </div>
+
+        <div className="text-sm text-ink/55">
+          {listing.interestCount} people viewed this
         </div>
       </div>
     </Link>

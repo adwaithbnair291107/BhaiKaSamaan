@@ -117,7 +117,10 @@ export function ListingDetailView({
               <span className="font-semibold text-ink">Seller:</span> {listing.postedBy}
             </p>
             <p>
-              <span className="font-semibold text-ink">Posted:</span> {listing.postedAgo}
+              <span className="font-semibold text-ink">Listed:</span> {listing.postedAgo}
+            </p>
+            <p>
+              <span className="font-semibold text-ink">Interest:</span> {listing.interestCount} people viewed this
             </p>
           </div>
 
@@ -137,7 +140,7 @@ export function ListingDetailView({
       {!canManageListing ? (
         <section className="mt-8 rounded-[32px] bg-white p-8 shadow-card">
           <p className="text-sm uppercase tracking-[0.26em] text-moss">Buyer Action</p>
-          <h2 className="mt-3 font-display text-3xl text-ink">Connect or make an offer</h2>
+          <h2 className="mt-3 font-display text-3xl text-ink">Chat with seller or make an offer</h2>
           <p className="mt-3 text-sm leading-6 text-ink/68">
             The amount shown above is the seller&apos;s expected price, which is the public price buyers can see. You can
             keep that same amount if you want to offer the full expected price, or enter a lower amount. If your offer

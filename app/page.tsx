@@ -36,6 +36,12 @@ export default async function HomePage() {
               >
                 Post your first item
               </Link>
+              <Link
+                href="/sell"
+                className="rounded-full border border-gold/40 bg-gold/10 px-6 py-3 text-sm font-semibold text-gold hover:bg-gold/20"
+              >
+                Request a Book
+              </Link>
               <a
                 href="#colleges"
                 className="rounded-full border border-white/25 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
@@ -43,11 +49,14 @@ export default async function HomePage() {
                 Browse by college
               </a>
             </div>
+            <p className="mt-5 max-w-2xl text-sm text-white/68">
+              Didn&apos;t find your book? Request it from your campus.
+            </p>
           </div>
 
           <div className="grid gap-4 rounded-[28px] bg-white/10 p-5">
             {[
-              "Select a college first",
+              "Choose your college to see relevant listings",
               "See only relevant listings",
               "Filter by branch, year, and category",
               "Connect with the seller locally"
