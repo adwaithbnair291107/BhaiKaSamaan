@@ -11,6 +11,39 @@ function requireValue(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getServiceRoleConfig() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error("Supabase service role configuration is missing.");
+  }
+
+  return { url, key };
+}
+
+async function insertWithServiceRole(path: string, payload: Record<string, unknown>) {
+  const { url, key } = getServiceRoleConfig();
+  const response = await fetch(`${url}/rest/v1/${path}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation"
+    },
+    body: JSON.stringify([payload]),
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    const message = await response.text();
+    throw new Error(`Supabase request failed: ${response.status} ${message}`);
+  }
+
+  return response.json();
+}
+
 function parseStoredImages(value: string) {
   if (!value) {
     return [] as string[];
@@ -440,6 +473,43 @@ export async function submitSellerReview(formData: FormData) {
 
     console.error("Failed to submit seller review", error);
     redirect(`/listings/${listingId}?review=error`);
+  }
+}
+
+export async function submitBookRequest(formData: FormData) {
+  const bookTitle = requireValue(formData, "bookTitle");
+
+  try {
+    const requesterName = requireValue(formData, "requesterName");
+    const requesterCollege = requireValue(formData, "requesterCollege");
+    const contactInfo = requireValue(formData, "contactInfo");
+    const description = requireValue(formData, "description");
+
+    if (!bookTitle || !requesterName || !requesterCollege || !description) {
+      redirect("/?request=missing#request-book");
+    }
+
+    const images = await collectUploadedImages(formData, "/?request=");
+    const requestImage = images[0] ?? null;
+
+    await insertWithServiceRole("book_requests?select=id", {
+      requester_name: requesterName,
+      requester_college: requesterCollege,
+      book_title: bookTitle,
+      contact_info: contactInfo || null,
+      description,
+      image: requestImage
+    });
+
+    revalidatePath("/");
+    redirect("/?request=sent#request-book");
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
+    console.error("Failed to submit book request", error);
+    redirect(`/?request=${bookTitle ? "error" : "missing"}#request-book`);
   }
 }
 

@@ -48,6 +48,17 @@ export type SellerSnapshot = {
   reviews: SellerReview[];
 };
 
+export type BookRequest = {
+  id: string;
+  requesterName: string;
+  requesterCollege: string;
+  bookTitle: string;
+  contactInfo?: string | null;
+  description: string;
+  image?: string | null;
+  postedAgo: string;
+};
+
 export type Offer = {
   id: string;
   listingId: string;
@@ -151,6 +162,17 @@ type OfferMessageRow = {
   sender_role: "buyer" | "seller" | "system";
   sender_name: string;
   body: string;
+  created_at: string;
+};
+
+type BookRequestRow = {
+  id: string;
+  requester_name: string;
+  requester_college: string;
+  book_title: string;
+  contact_info: string | null;
+  description: string;
+  image: string | null;
   created_at: string;
 };
 export const categories = ["Competitive Exam Books", "College Accessories"];
@@ -381,6 +403,19 @@ function mapSellerReview(row: SellerReviewRow): SellerReview {
     rating: Number(row.rating),
     comment: row.comment,
     createdAt: row.created_at,
+    postedAgo: formatPostedAgo(row.created_at)
+  };
+}
+
+function mapBookRequest(row: BookRequestRow): BookRequest {
+  return {
+    id: row.id,
+    requesterName: row.requester_name,
+    requesterCollege: row.requester_college,
+    bookTitle: row.book_title,
+    contactInfo: row.contact_info,
+    description: row.description,
+    image: row.image,
     postedAgo: formatPostedAgo(row.created_at)
   };
 }
@@ -732,6 +767,27 @@ export async function getClosedListings(limit = 6): Promise<Listing[]> {
   );
 
   return attachSellerTrustToListings(listingRows.map((listing) => mapListing(listing)));
+}
+
+export async function getRecentBookRequests(limit = 6): Promise<BookRequest[]> {
+  const config = getSupabaseConfig();
+  if (!config) {
+    return [];
+  }
+
+  try {
+    const requestRows = await querySupabase<BookRequestRow[]>(
+      `book_requests?select=id,requester_name,requester_college,book_title,contact_info,description,image,created_at&order=created_at.desc&limit=${limit}`,
+      {
+        next: { revalidate: 60 }
+      }
+    );
+
+    return requestRows.map(mapBookRequest);
+  } catch (error) {
+    console.error("Failed to load book requests", error);
+    return [];
+  }
 }
 
 export async function getListing(id: string): Promise<Listing | null> {

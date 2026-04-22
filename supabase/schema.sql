@@ -93,6 +93,17 @@ create table if not exists public.seller_reviews (
   unique (listing_id, reviewer_user_id)
 );
 
+create table if not exists public.book_requests (
+  id uuid primary key default gen_random_uuid(),
+  requester_name text not null,
+  requester_college text not null,
+  book_title text not null,
+  contact_info text,
+  description text not null,
+  image text,
+  created_at timestamptz not null default now()
+);
+
 do $$
 begin
   if not exists (
@@ -139,3 +150,4 @@ create index if not exists offers_buyer_user_id_idx on public.offers (buyer_user
 create index if not exists offer_messages_offer_id_idx on public.offer_messages (offer_id);
 create index if not exists seller_reviews_listing_id_idx on public.seller_reviews (listing_id);
 create index if not exists seller_reviews_seller_user_id_idx on public.seller_reviews (seller_user_id);
+create index if not exists book_requests_created_at_idx on public.book_requests (created_at desc);
