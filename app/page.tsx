@@ -24,11 +24,11 @@ export default async function HomePage() {
           <div>
             <p className="text-sm tracking-[0.12em] text-gold">Student resale, but local.</p>
             <h2 className="mt-4 max-w-2xl font-display text-5xl leading-tight sm:text-6xl">
-              One platform. Many college mini marketplaces.
+              A campus-first marketplace for buying and selling books with trusted student verification.
             </h2>
             <p className="mt-6 max-w-2xl text-lg text-white/78">
-              Students browse only their campus, seniors clear useful stuff quickly, and juniors buy
-              it for a fair price.
+              Students browse only relevant campus listings, check seller trust through reviews, and
+              buy from verified students with more confidence.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
