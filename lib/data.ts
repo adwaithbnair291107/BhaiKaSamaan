@@ -8,6 +8,8 @@ export type Listing = {
   collegeSlug: string;
   collegeName: string;
   userId?: string | null;
+  sellerVerified: boolean;
+  sellerVerificationLabel: string;
   status: "active" | "sold";
   branch?: string | null;
   year?: string | null;
@@ -24,6 +26,25 @@ export type Listing = {
   description: string;
   image: string;
   images: string[];
+};
+
+export type SellerReview = {
+  id: string;
+  listingId: string;
+  reviewerName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  postedAgo: string;
+};
+
+export type SellerSnapshot = {
+  isVerified: boolean;
+  verificationLabel: string;
+  verificationReason: string;
+  averageRating: number | null;
+  reviewCount: number;
+  reviews: SellerReview[];
 };
 
 export type Offer = {
@@ -97,6 +118,17 @@ type ListingRow = {
   sold_delete_at?: string | null;
   created_at: string;
   colleges?: ListingCollegeRelation | ListingCollegeRelation[];
+};
+
+type SellerReviewRow = {
+  id: string;
+  listing_id: string;
+  seller_user_id: string;
+  reviewer_user_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  created_at: string;
 };
 
 type OfferRow = {
@@ -313,6 +345,8 @@ function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): 
     collegeSlug: row.college_slug,
     collegeName: college?.name ?? "Unknown College",
     userId: row.user_id ?? null,
+    sellerVerified: false,
+    sellerVerificationLabel: "Verified Seller",
     status: row.status === "sold" ? "sold" : "active",
     branch: row.branch ?? undefined,
     year: row.year ?? undefined,
@@ -330,6 +364,112 @@ function mapListing(row: ListingRow, collegesBySlug?: Map<string, CollegeRow>): 
     image: images[0] ?? DEFAULT_LISTING_IMAGE,
     images
   };
+}
+
+function mapSellerReview(row: SellerReviewRow): SellerReview {
+  return {
+    id: row.id,
+    listingId: row.listing_id,
+    reviewerName: row.reviewer_name,
+    rating: Number(row.rating),
+    comment: row.comment,
+    createdAt: row.created_at,
+    postedAgo: formatPostedAgo(row.created_at)
+  };
+}
+
+const negativeReviewKeywords = [
+  "fake",
+  "fraud",
+  "scam",
+  "false",
+  "bad",
+  "poor",
+  "damaged",
+  "rude",
+  "late",
+  "misleading"
+];
+
+function deriveSellerVerification(reviews: SellerReview[]) {
+  const reviewCount = reviews.length;
+  const averageRating =
+    reviewCount > 0 ? Number((reviews.reduce((sum, review) => sum + review.rating, 0) / reviewCount).toFixed(1)) : null;
+  const hasNegativeComment = reviews.some((review) => {
+    const normalizedComment = review.comment.toLowerCase();
+    return negativeReviewKeywords.some((keyword) => normalizedComment.includes(keyword));
+  });
+  const hasLowRating = reviews.some((review) => review.rating <= 2);
+  const isVerified = Boolean(reviewCount >= 3 && averageRating !== null && averageRating >= 4 && !hasLowRating && !hasNegativeComment);
+
+  let verificationReason = "This seller needs more positive customer feedback before earning verification.";
+  if (isVerified) {
+    verificationReason = "This seller has consistent positive ratings and no strong negative feedback.";
+  } else if (hasLowRating || hasNegativeComment) {
+    verificationReason = "Negative ratings or comments removed the verification tag for this seller.";
+  }
+
+  return {
+    isVerified,
+    verificationLabel: "User Verified",
+    verificationReason,
+    averageRating
+  };
+}
+
+async function getSellerReviewSummaryMap(userIds: Array<string | null | undefined>) {
+  const uniqueUserIds = Array.from(new Set(userIds.filter((value): value is string => Boolean(value))));
+  if (uniqueUserIds.length === 0) {
+    return new Map<string, SellerSnapshot>();
+  }
+
+  try {
+    const encodedUserIds = encodeURIComponent(`(${uniqueUserIds.map((userId) => `"${userId}"`).join(",")})`);
+    const reviewRows = await querySupabase<SellerReviewRow[]>(
+      `seller_reviews?select=id,listing_id,seller_user_id,reviewer_user_id,reviewer_name,rating,comment,created_at&seller_user_id=in.${encodedUserIds}&order=created_at.desc`
+    );
+
+    const rowsBySeller = new Map<string, SellerReview[]>();
+    for (const row of reviewRows) {
+      const review = mapSellerReview(row);
+      const currentReviews = rowsBySeller.get(row.seller_user_id) ?? [];
+      currentReviews.push(review);
+      rowsBySeller.set(row.seller_user_id, currentReviews);
+    }
+
+    const summaryMap = new Map<string, SellerSnapshot>();
+    for (const userId of uniqueUserIds) {
+      const reviews = rowsBySeller.get(userId) ?? [];
+      const verification = deriveSellerVerification(reviews);
+      summaryMap.set(userId, {
+        isVerified: verification.isVerified,
+        verificationLabel: verification.verificationLabel,
+        verificationReason: verification.verificationReason,
+        averageRating: verification.averageRating,
+        reviewCount: reviews.length,
+        reviews: reviews.slice(0, 8)
+      });
+    }
+
+    return summaryMap;
+  } catch (error) {
+    console.error("Failed to load seller review summaries", error);
+    return new Map<string, SellerSnapshot>();
+  }
+}
+
+async function attachSellerTrustToListings(listings: Listing[]) {
+  const sellerReviewSummaries = await getSellerReviewSummaryMap(listings.map((listing) => listing.userId));
+
+  return listings.map((listing) => {
+    const sellerSummary = listing.userId ? sellerReviewSummaries.get(listing.userId) : null;
+
+    return {
+      ...listing,
+      sellerVerified: Boolean(sellerSummary?.isVerified),
+      sellerVerificationLabel: sellerSummary?.verificationLabel || "User Verified"
+    };
+  });
 }
 
 export async function getColleges(): Promise<College[]> {
@@ -499,9 +639,11 @@ export async function getListingsByCollege(slug: string): Promise<Listing[]> {
     }
   );
 
-  return listingRows
+  const listings = listingRows
     .filter((listing) => isCollegeListingVisibleForCollegeFeed(listing) && isActiveListing(listing))
     .map((listing) => mapListing(listing));
+
+  return attachSellerTrustToListings(listings);
 }
 
 export async function getListingsByCategoryBrowse(
@@ -536,7 +678,8 @@ export async function getListingsByCategoryBrowse(
     }
   );
 
-  return listingRows.filter(isActiveListing).map((listing) => mapListing(listing));
+  const listings = listingRows.filter(isActiveListing).map((listing) => mapListing(listing));
+  return attachSellerTrustToListings(listings);
 }
 
 export async function getListingsByUser(userId: string): Promise<Listing[]> {
@@ -553,7 +696,7 @@ export async function getListingsByUser(userId: string): Promise<Listing[]> {
     )}&order=created_at.desc`
   );
 
-  return listingRows.map((listing) => mapListing(listing));
+  return attachSellerTrustToListings(listingRows.map((listing) => mapListing(listing)));
 }
 
 export async function getRecentListings(limit = 6): Promise<Listing[]> {
@@ -573,7 +716,8 @@ export async function getRecentListings(limit = 6): Promise<Listing[]> {
     }
   );
 
-  return listingRows.filter(isActiveListing).slice(0, limit).map((listing) => mapListing(listing));
+  const listings = listingRows.filter(isActiveListing).slice(0, limit).map((listing) => mapListing(listing));
+  return attachSellerTrustToListings(listings);
 }
 
 export async function getClosedListings(limit = 6): Promise<Listing[]> {
@@ -591,7 +735,7 @@ export async function getClosedListings(limit = 6): Promise<Listing[]> {
     }
   );
 
-  return listingRows.map((listing) => mapListing(listing));
+  return attachSellerTrustToListings(listingRows.map((listing) => mapListing(listing)));
 }
 
 export async function getListing(id: string): Promise<Listing | null> {
@@ -613,7 +757,8 @@ export async function getListing(id: string): Promise<Listing | null> {
     return null;
   }
 
-  return mapListing(listing);
+  const [enrichedListing] = await attachSellerTrustToListings([mapListing(listing)]);
+  return enrichedListing ?? null;
 }
 
 type CreateListingInput = {
@@ -755,6 +900,74 @@ export async function getOfferThreadsForBuyer(listingId: string, buyerUserId: st
   const offers = offerRows.map(mapOffer);
   const messagesByOfferId = await getOfferMessagesByOfferIds(offers.map((offer) => offer.id));
   return mergeOfferMessages(offers, messagesByOfferId);
+}
+
+export async function getSellerSnapshot(userId?: string | null): Promise<SellerSnapshot> {
+  if (!userId) {
+    return {
+      isVerified: false,
+      verificationLabel: "User Verified",
+      verificationReason: "This seller needs more positive customer feedback before earning verification.",
+      averageRating: null,
+      reviewCount: 0,
+      reviews: []
+    };
+  }
+
+  try {
+    const reviewRows = await querySupabase<SellerReviewRow[]>(
+      `seller_reviews?select=id,listing_id,seller_user_id,reviewer_user_id,reviewer_name,rating,comment,created_at&seller_user_id=eq.${encodeURIComponent(
+        userId
+      )}&order=created_at.desc`
+    );
+    const reviews = reviewRows.map(mapSellerReview);
+    const verification = deriveSellerVerification(reviews);
+
+    return {
+      isVerified: verification.isVerified,
+      verificationLabel: verification.verificationLabel,
+      verificationReason: verification.verificationReason,
+      averageRating: verification.averageRating,
+      reviewCount: reviews.length,
+      reviews: reviews.slice(0, 8)
+    };
+  } catch (error) {
+    console.error("Failed to load seller snapshot", error);
+    return {
+      isVerified: false,
+      verificationLabel: "User Verified",
+      verificationReason: "This seller needs more positive customer feedback before earning verification.",
+      averageRating: null,
+      reviewCount: 0,
+      reviews: []
+    };
+  }
+}
+
+export async function canUserReviewListing(listingId: string, sellerUserId: string | null | undefined, reviewerUserId: string) {
+  if (!sellerUserId || sellerUserId === reviewerUserId) {
+    return false;
+  }
+
+  try {
+    const [confirmedOfferRows, existingReviewRows] = await Promise.all([
+      querySupabase<Array<{ id: string }>>(
+        `offers?select=id&listing_id=eq.${encodeURIComponent(listingId)}&buyer_user_id=eq.${encodeURIComponent(
+          reviewerUserId
+        )}&status=eq.confirmed&limit=1`
+      ),
+      querySupabase<Array<{ id: string }>>(
+        `seller_reviews?select=id&listing_id=eq.${encodeURIComponent(listingId)}&reviewer_user_id=eq.${encodeURIComponent(
+          reviewerUserId
+        )}&limit=1`
+      )
+    ]);
+
+    return confirmedOfferRows.length > 0 && existingReviewRows.length === 0;
+  } catch (error) {
+    console.error("Failed to check review eligibility", error);
+    return false;
+  }
 }
 
 type CreateOfferInput = {

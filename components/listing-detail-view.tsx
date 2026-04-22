@@ -1,6 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import { closeOfferConversation, deleteListing, deleteOfferConversation, saveListingChanges, submitOffer } from "@/app/sell/actions";
+import {
+  closeOfferConversation,
+  deleteListing,
+  deleteOfferConversation,
+  saveListingChanges,
+  submitOffer,
+  submitSellerReview
+} from "@/app/sell/actions";
 import { AuthButton } from "@/components/auth-button";
 import { ConversationMessageForm } from "@/components/conversation-message-form";
 import { FormSubmitButton } from "@/components/form-submit-button";
@@ -9,37 +16,49 @@ import {
   COMPETITIVE_EXAMS_LABEL,
   COMPETITIVE_EXAMS_SLUG,
   type Listing,
-  type OfferThread
+  type OfferThread,
+  type SellerSnapshot
 } from "@/lib/data";
 
 type ListingDetailViewProps = {
   listing: Listing;
   offerStatus?: string;
   manageStatus?: string;
+  reviewStatus?: string;
   activeOfferId?: string;
   activeOfferStep?: string;
   canManageListing: boolean;
   userName?: string;
   userEmail?: string;
+  canLeaveReview: boolean;
+  sellerSnapshot: SellerSnapshot;
   buyerThreads: OfferThread[];
   sellerThreads: OfferThread[];
 };
+
+function renderRatingStars(rating: number) {
+  return Array.from({ length: 5 }, (_, index) => (index < rating ? "★" : "☆")).join("");
+}
 
 export function ListingDetailView({
   listing,
   offerStatus,
   manageStatus,
+  reviewStatus,
   activeOfferId,
   activeOfferStep,
   canManageListing,
   userName,
   userEmail,
+  canLeaveReview,
+  sellerSnapshot,
   buyerThreads,
   sellerThreads
 }: ListingDetailViewProps) {
   const listingPlace = listing.location || listing.city;
   const isCompetitiveListing = listing.collegeSlug === COMPETITIVE_EXAMS_SLUG;
   const listingIsSold = listing.status === "sold";
+  const sellerBadgeClassName = "bg-moss/10 text-moss border border-moss/15";
 
   return (
     <>
@@ -75,6 +94,16 @@ export function ListingDetailView({
             <span className="rounded-full bg-mist px-4 py-2">
               {isCompetitiveListing ? COMPETITIVE_EXAMS_LABEL : listing.collegeName}
             </span>
+            {listing.sellerVerified ? (
+              <span className={`rounded-full px-4 py-2 font-semibold ${sellerBadgeClassName}`}>
+                {listing.sellerVerificationLabel}
+              </span>
+            ) : null}
+            {sellerSnapshot.averageRating ? (
+              <span className="rounded-full bg-gold/20 px-4 py-2 font-semibold text-ink">
+                {sellerSnapshot.averageRating.toFixed(1)}/5 seller rating
+              </span>
+            ) : null}
             {listing.branch ? <span className="rounded-full bg-mist px-4 py-2">{listing.branch}</span> : null}
             {listing.year ? <span className="rounded-full bg-mist px-4 py-2">{listing.year}</span> : null}
             <span className="rounded-full bg-mist px-4 py-2">{listing.condition}</span>
@@ -242,6 +271,162 @@ export function ListingDetailView({
           )}
         </section>
       ) : null}
+
+      <section className="mt-8 rounded-[32px] bg-white p-8 shadow-card">
+        <p className="text-sm uppercase tracking-[0.26em] text-moss">Seller Trust</p>
+        <h2 className="mt-3 font-display text-3xl text-ink">Reviews and verification</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-ink/68">
+          Buyers can review the seller after a confirmed deal. Verified sellers get a visible trust badge on their listings.
+        </p>
+
+        <div className="mt-6 grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
+          <div className="rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-5">
+            <p className="text-xs uppercase tracking-[0.22em] text-moss">Seller Status</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              {listing.sellerVerified ? (
+                <span className={`rounded-full px-4 py-2 text-sm font-semibold ${sellerBadgeClassName}`}>
+                  {listing.sellerVerificationLabel}
+                </span>
+              ) : (
+                <span className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink/72">
+                  Not verified yet
+                </span>
+              )}
+            </div>
+            <div className="mt-5 rounded-[22px] bg-white px-4 py-4">
+              <p className="text-sm text-ink/60">Average seller rating</p>
+              <p className="mt-2 font-display text-4xl text-ink">
+                {sellerSnapshot.averageRating ? sellerSnapshot.averageRating.toFixed(1) : "--"}
+              </p>
+              <p className="mt-2 text-sm text-ink/60">
+                {sellerSnapshot.reviewCount > 0
+                  ? `${sellerSnapshot.reviewCount} customer review${sellerSnapshot.reviewCount === 1 ? "" : "s"}`
+                  : "No reviews yet"}
+              </p>
+              <p className="mt-3 text-sm leading-6 text-ink/65">{sellerSnapshot.verificationReason}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-5">
+            {reviewStatus === "sent" ? (
+              <p className="rounded-2xl bg-moss/10 px-4 py-3 text-sm text-moss">
+                Your review was added to this seller profile.
+              </p>
+            ) : null}
+
+            {reviewStatus === "auth" ? (
+              <p className="rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Please sign in before leaving a seller review.
+              </p>
+            ) : null}
+
+            {reviewStatus === "missing" || reviewStatus === "invalid" ? (
+              <p className="rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Please add a rating and a short review comment.
+              </p>
+            ) : null}
+
+            {reviewStatus === "denied" ? (
+              <p className="rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                Only buyers with a confirmed deal on this listing can review this seller.
+              </p>
+            ) : null}
+
+            {reviewStatus === "exists" ? (
+              <p className="rounded-2xl bg-ink/5 px-4 py-3 text-sm text-ink/70">
+                You have already reviewed this seller for this listing.
+              </p>
+            ) : null}
+
+            {reviewStatus === "error" ? (
+              <p className="rounded-2xl bg-clay/10 px-4 py-3 text-sm text-clay">
+                We could not save the review right now. Please try again.
+              </p>
+            ) : null}
+
+            {canLeaveReview ? (
+              <form action={submitSellerReview} className="rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-5">
+                <input type="hidden" name="listingId" value={listing.id} />
+                <div className="grid gap-5 md:grid-cols-[0.9fr_1.1fr]">
+                  <label className="grid gap-2 text-sm font-medium text-ink">
+                    Your Name
+                    <input
+                      name="reviewerName"
+                      required
+                      defaultValue={userName || userEmail || ""}
+                      className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
+                      placeholder="Your name"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm font-medium text-ink">
+                    Rating
+                    <select
+                      name="rating"
+                      required
+                      defaultValue="5"
+                      className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
+                    >
+                      <option value="5">5 - Excellent</option>
+                      <option value="4">4 - Good</option>
+                      <option value="3">3 - Average</option>
+                      <option value="2">2 - Poor</option>
+                      <option value="1">1 - Bad</option>
+                    </select>
+                  </label>
+                </div>
+
+                <label className="mt-5 grid gap-2 text-sm font-medium text-ink">
+                  Review
+                  <textarea
+                    name="comment"
+                    required
+                    rows={4}
+                    className="rounded-[22px] border border-ink/10 bg-white px-5 py-4 text-[15px] outline-none transition focus:border-moss focus:ring-4 focus:ring-moss/10"
+                    placeholder="Was the seller responsive, honest, and accurate about the item?"
+                  />
+                </label>
+
+                <div className="mt-5">
+                  <FormSubmitButton
+                    idleLabel="Submit Review"
+                    pendingLabel="Submitting..."
+                    className="w-fit rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white hover:bg-moss disabled:opacity-60"
+                  />
+                </div>
+              </form>
+            ) : (
+              <div className="rounded-[28px] border border-dashed border-ink/15 bg-[#f7f1e3] p-5 text-sm leading-6 text-ink/68">
+                Reviews can be added only by buyers whose deal was confirmed on this listing.
+              </div>
+            )}
+
+            {sellerSnapshot.reviews.length > 0 ? (
+              <div className="grid gap-4">
+                {sellerSnapshot.reviews.map((review) => (
+                  <article key={review.id} className="rounded-[24px] border border-ink/10 bg-[#f7f1e3] p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-ink">{review.reviewerName}</p>
+                        <p className="mt-1 text-sm text-gold">{renderRatingStars(review.rating)}</p>
+                      </div>
+                      <p className="text-sm text-ink/55">{review.postedAgo}</p>
+                    </div>
+                    <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-ink/78">{review.comment}</p>
+                    {review.listingId === listing.id ? (
+                      <p className="mt-3 text-xs uppercase tracking-[0.16em] text-moss">From this listing</p>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[28px] border border-dashed border-ink/15 bg-[#f7f1e3] p-5 text-sm text-ink/65">
+                No customer reviews yet for this seller.
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       {canManageListing ? (
         <section className="mt-8 rounded-[32px] bg-white p-8 shadow-card">

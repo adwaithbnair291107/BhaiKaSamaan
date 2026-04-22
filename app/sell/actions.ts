@@ -344,6 +344,105 @@ export async function submitOffer(formData: FormData) {
   redirect(`/listings/${listingId}?offer=sent&t=${Date.now()}`);
 }
 
+export async function submitSellerReview(formData: FormData) {
+  const listingId = requireValue(formData, "listingId");
+
+  try {
+    const supabase = createClient();
+    const {
+      data: { session }
+    } = await supabase.auth.getSession();
+    const user = session?.user;
+
+    if (!listingId) {
+      redirect("/");
+    }
+
+    if (!user) {
+      redirect(`/listings/${listingId}?review=auth`);
+    }
+
+    const reviewerName = requireValue(formData, "reviewerName");
+    const comment = requireValue(formData, "comment");
+    const ratingValue = requireValue(formData, "rating");
+
+    if (!reviewerName || !comment || !ratingValue) {
+      redirect(`/listings/${listingId}?review=missing`);
+    }
+
+    const rating = Number(ratingValue);
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+      redirect(`/listings/${listingId}?review=invalid`);
+    }
+
+    const { data: listing, error: listingError } = await supabase
+      .from("listings")
+      .select("id,user_id")
+      .eq("id", listingId)
+      .single();
+
+    if (listingError || !listing || !listing.user_id) {
+      redirect(`/listings/${listingId}?review=invalid`);
+    }
+
+    if (listing.user_id === user.id) {
+      redirect(`/listings/${listingId}?review=denied`);
+    }
+
+    const { data: confirmedOffer, error: confirmedOfferError } = await supabase
+      .from("offers")
+      .select("id")
+      .eq("listing_id", listingId)
+      .eq("buyer_user_id", user.id)
+      .eq("status", "confirmed")
+      .limit(1)
+      .maybeSingle();
+
+    if (confirmedOfferError || !confirmedOffer) {
+      redirect(`/listings/${listingId}?review=denied`);
+    }
+
+    const { data: existingReview, error: existingReviewError } = await supabase
+      .from("seller_reviews")
+      .select("id")
+      .eq("listing_id", listingId)
+      .eq("reviewer_user_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingReviewError) {
+      throw existingReviewError;
+    }
+
+    if (existingReview) {
+      redirect(`/listings/${listingId}?review=exists`);
+    }
+
+    const { error: insertReviewError } = await supabase.from("seller_reviews").insert({
+      listing_id: listingId,
+      seller_user_id: listing.user_id,
+      reviewer_user_id: user.id,
+      reviewer_name: reviewerName,
+      rating,
+      comment
+    });
+
+    if (insertReviewError) {
+      throw insertReviewError;
+    }
+
+    revalidatePath(`/listings/${listingId}`);
+    redirect(`/listings/${listingId}?review=sent`);
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error;
+    }
+
+    console.error("Failed to submit seller review", error);
+    redirect(`/listings/${listingId}?review=error`);
+  }
+}
+
 export async function sendOfferMessage(formData: FormData) {
   const supabase = createClient();
   const {

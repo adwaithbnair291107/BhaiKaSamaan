@@ -7,6 +7,14 @@ create table if not exists public.colleges (
   description text
 );
 
+create table if not exists public.seller_profiles (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  is_verified boolean not null default false,
+  verification_label text not null default 'User Verified',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.listings (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
@@ -73,6 +81,18 @@ create table if not exists public.offer_messages (
 
 alter table public.offer_messages add column if not exists listing_id uuid references public.listings(id) on delete cascade;
 
+create table if not exists public.seller_reviews (
+  id uuid primary key default gen_random_uuid(),
+  listing_id uuid not null references public.listings(id) on delete cascade,
+  seller_user_id uuid not null references auth.users(id) on delete cascade,
+  reviewer_user_id uuid not null references auth.users(id) on delete cascade,
+  reviewer_name text not null,
+  rating integer not null,
+  comment text not null,
+  created_at timestamptz not null default now(),
+  unique (listing_id, reviewer_user_id)
+);
+
 do $$
 begin
   if not exists (
@@ -104,6 +124,12 @@ begin
   ) then
     alter table public.offers add constraint offers_status_valid check (status in ('open', 'closed', 'confirmed'));
   end if;
+
+  if not exists (
+    select 1 from pg_constraint where conname = 'seller_reviews_rating_range'
+  ) then
+    alter table public.seller_reviews add constraint seller_reviews_rating_range check (rating between 1 and 5);
+  end if;
 end $$;
 
 create index if not exists listings_college_slug_idx on public.listings (college_slug);
@@ -111,3 +137,5 @@ create index if not exists listings_created_at_idx on public.listings (created_a
 create index if not exists offers_listing_id_idx on public.offers (listing_id);
 create index if not exists offers_buyer_user_id_idx on public.offers (buyer_user_id);
 create index if not exists offer_messages_offer_id_idx on public.offer_messages (offer_id);
+create index if not exists seller_reviews_listing_id_idx on public.seller_reviews (listing_id);
+create index if not exists seller_reviews_seller_user_id_idx on public.seller_reviews (seller_user_id);
