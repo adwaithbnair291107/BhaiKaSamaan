@@ -11,6 +11,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const listingTitle = isCompetitiveListing ? listing.category : listing.title;
   const showSellerBadge = listing.sellerVerified || listing.status === "sold";
   const sellerBadgeLabel = listing.sellerVerified ? listing.sellerVerificationLabel : "Verified Seller";
+  const sellerBadgeClassName =
+    "mt-3 inline-flex items-center gap-2 rounded-full border border-moss/20 bg-moss/8 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-moss";
 
   return (
     <Link
@@ -32,7 +34,8 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <p className="mt-1 text-sm text-ink/55">{listingSubtitle}</p>
             <h3 className="mt-2 text-lg font-semibold text-ink">{listingTitle}</h3>
             {showSellerBadge ? (
-              <p className="mt-3 inline-flex rounded-full bg-moss/10 px-3 py-1 text-xs font-semibold text-moss">
+              <p className={sellerBadgeClassName}>
+                <span className="h-2 w-2 rounded-full bg-moss" />
                 {sellerBadgeLabel}
               </p>
             ) : null}

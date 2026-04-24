@@ -60,6 +60,8 @@ export function ListingDetailView({
   const isCompetitiveListing = listing.collegeSlug === COMPETITIVE_EXAMS_SLUG;
   const listingIsSold = listing.status === "sold";
   const sellerBadgeClassName = "bg-moss/10 text-moss border border-moss/15";
+  const showSellerBadge = listing.sellerVerified || listingIsSold;
+  const sellerBadgeLabel = listing.sellerVerified ? listing.sellerVerificationLabel : "Verified Seller";
 
   return (
     <>
@@ -94,9 +96,9 @@ export function ListingDetailView({
             <span className="rounded-full bg-mist px-4 py-2">
               {isCompetitiveListing ? COMPETITIVE_EXAMS_LABEL : listing.collegeName}
             </span>
-            {listing.sellerVerified ? (
+            {showSellerBadge ? (
               <span className={`rounded-full px-4 py-2 font-semibold ${sellerBadgeClassName}`}>
-                {listing.sellerVerificationLabel}
+                {sellerBadgeLabel}
               </span>
             ) : null}
             {sellerSnapshot.averageRating ? (
@@ -286,9 +288,9 @@ export function ListingDetailView({
           <div className="rounded-[28px] border border-ink/10 bg-[#f7f1e3] p-5">
             <p className="text-xs uppercase tracking-[0.22em] text-moss">Seller Status</p>
             <div className="mt-4 flex flex-wrap gap-3">
-              {listing.sellerVerified ? (
+              {showSellerBadge ? (
                 <span className={`rounded-full px-4 py-2 text-sm font-semibold ${sellerBadgeClassName}`}>
-                  {listing.sellerVerificationLabel}
+                  {sellerBadgeLabel}
                 </span>
               ) : (
                 <span className="rounded-full border border-ink/10 bg-white px-4 py-2 text-sm font-semibold text-ink/72">
