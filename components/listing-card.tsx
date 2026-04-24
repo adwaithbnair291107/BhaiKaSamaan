@@ -9,6 +9,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const listingSubtitle = isCompetitiveListing ? COMPETITIVE_EXAMS_LABEL : listing.collegeName;
   const listingHeader = isCompetitiveListing ? listing.title : listing.category;
   const listingTitle = isCompetitiveListing ? listing.category : listing.title;
+  const showSellerBadge = listing.sellerVerified || listing.status === "sold";
+  const sellerBadgeLabel = listing.sellerVerified ? listing.sellerVerificationLabel : "Verified Seller";
+
   return (
     <Link
       href={`/listings/${listing.id}`}
@@ -28,9 +31,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
             <p className="text-xs uppercase tracking-[0.24em] text-moss">{listingHeader}</p>
             <p className="mt-1 text-sm text-ink/55">{listingSubtitle}</p>
             <h3 className="mt-2 text-lg font-semibold text-ink">{listingTitle}</h3>
-            {listing.sellerVerified ? (
+            {showSellerBadge ? (
               <p className="mt-3 inline-flex rounded-full bg-moss/10 px-3 py-1 text-xs font-semibold text-moss">
-                {listing.sellerVerificationLabel}
+                {sellerBadgeLabel}
               </p>
             ) : null}
           </div>
